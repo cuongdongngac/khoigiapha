@@ -12,7 +12,6 @@ import {
   Users,
 } from "lucide-react";
 import Image from "next/image";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import DefaultAvatar from "./DefaultAvatar";
 import { FemaleIcon, MaleIcon } from "./GenderIcons";
@@ -275,34 +274,9 @@ const KINSHIP_TERMS = [
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function KinshipFinder({ persons, relationships }: Props) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const p1Id = searchParams.get("p1");
-  const p2Id = searchParams.get("p2");
-
-  const personA = useMemo(
-    () => persons.find((p) => p.id === p1Id) || null,
-    [persons, p1Id],
-  );
-  const personB = useMemo(
-    () => persons.find((p) => p.id === p2Id) || null,
-    [persons, p2Id],
-  );
-
+  const [personA, setPersonA] = useState<PersonNode | null>(null);
+  const [personB, setPersonB] = useState<PersonNode | null>(null);
   const [showGuide, setShowGuide] = useState(false);
-
-  const updateUrl = (p1Id: string | null, p2Id: string | null) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (p1Id) params.set("p1", p1Id);
-    else params.delete("p1");
-    if (p2Id) params.set("p2", p2Id);
-    else params.delete("p2");
-
-    const newUrl = `${pathname}?${params.toString()}`;
-    router.replace(newUrl, { scroll: false });
-  };
 
   const result = useMemo(() => {
     if (!personA || !personB) return null;
@@ -310,7 +284,8 @@ export default function KinshipFinder({ persons, relationships }: Props) {
   }, [personA, personB, persons, relationships]);
 
   const swap = () => {
-    updateUrl(p2Id, p1Id);
+    setPersonA(personB);
+    setPersonB(personA);
   };
 
   return (
@@ -321,7 +296,7 @@ export default function KinshipFinder({ persons, relationships }: Props) {
           <PersonSelector
             label="Thành viên A"
             selected={personA}
-            onSelect={(p) => updateUrl(p.id, p2Id)}
+            onSelect={setPersonA}
             persons={persons}
             disabledId={personB?.id}
           />
@@ -335,7 +310,7 @@ export default function KinshipFinder({ persons, relationships }: Props) {
           <PersonSelector
             label="Thành viên B"
             selected={personB}
-            onSelect={(p) => updateUrl(p1Id, p.id)}
+            onSelect={setPersonB}
             persons={persons}
             disabledId={personA?.id}
           />

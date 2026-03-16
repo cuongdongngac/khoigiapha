@@ -4,14 +4,7 @@ import config from "@/app/config";
 import Footer from "@/components/Footer";
 import { createClient } from "@/utils/supabase/client";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  ArrowLeft,
-  Info,
-  KeyRound,
-  Mail,
-  Shield,
-  UserPlus,
-} from "lucide-react";
+import { ArrowLeft, Info, KeyRound, Mail, Shield } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -37,86 +30,24 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
-  const [isLogin, setIsLogin] = useState(true);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [confirmPassword, setConfirmPassword] = useState("");
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-        if (error) {
-          setError(error.message);
-        } else {
-          router.push("/dashboard");
-          router.refresh();
-        }
+      if (error) {
+        setError(error.message);
       } else {
-        if (password !== confirmPassword) {
-          setError("Mật khẩu xác nhận không khớp.");
-          setLoading(false);
-          return;
-        }
-
-        // 1. Try to sign up
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-
-        if (error) {
-          // Check if error is related to missing database schema/tables
-          if (
-            error.message.includes("relation") &&
-            error.message.includes("does not exist")
-          ) {
-            router.push("/setup");
-            return;
-          }
-
-          setError(error.message);
-        } else if (data.user?.identities && data.user.identities.length === 0) {
-          setError(
-            "Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.",
-          );
-        } else {
-          if (data.session) {
-            router.push("/dashboard");
-            router.refresh();
-          } else {
-            // Attempt to sign in immediately (catches auto-confirmed first admin)
-            const { data: signInData, error: signInError } =
-              await supabase.auth.signInWithPassword({
-                email,
-                password,
-              });
-
-            if (!signInError && signInData.session) {
-              router.push("/dashboard");
-              router.refresh();
-            } else {
-              setSuccessMessage(
-                "Đăng ký thành công! Vui lòng chờ admin kích hoạt tài khoản để xem nội dung.",
-              );
-              setIsLogin(true); // Switch back to login view
-              setConfirmPassword(""); // clear confirm password
-              setPassword(""); // clear password
-            }
-          }
-        }
+        router.push("/dashboard");
       }
-    } catch (err) {
-      setError("An unexpected error occurred");
-      console.error(err);
+    } catch (err: any) {
+      setError("Có lỗi xảy ra. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -150,12 +81,10 @@ export default function LoginPage() {
               <Shield className="size-8 text-amber-600" />
             </Link>
             <h2 className="text-3xl sm:text-4xl font-serif font-bold text-stone-900 tracking-tight">
-              {isLogin ? "Đăng nhập" : "Đăng ký"}
+              Đăng nhập
             </h2>
             <p className="mt-3 text-sm text-stone-500 font-medium tracking-wide">
-              {isLogin
-                ? "Đăng nhập để truy cập gia phả."
-                : "Tạo tài khoản thành viên mới."}
+              Đăng nhập để truy cập gia phả.
             </p>
             {isDemo && (
               <motion.div
@@ -208,7 +137,7 @@ export default function LoginPage() {
                     id="password"
                     name="password"
                     type="password"
-                    autoComplete={isLogin ? "current-password" : "new-password"}
+                    autoComplete="current-password"
                     required
                     className="bg-white/50 text-stone-900 placeholder-stone-400 block w-full rounded-xl border border-stone-200/80 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] focus:border-amber-400 focus:ring-amber-400 focus:bg-white pl-11 pr-4 py-3.5 transition-all duration-200 outline-none"
                     placeholder="Nhập mật khẩu"
@@ -217,39 +146,6 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
-
-              <AnimatePresence>
-                {!isLogin && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                    animate={{ opacity: 1, height: "auto", marginTop: 16 }}
-                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="relative overflow-hidden"
-                  >
-                    <label
-                      htmlFor="confirmPassword"
-                      className="block text-[13px] font-semibold text-stone-600 mb-1.5 ml-1"
-                    >
-                      Xác nhận mật khẩu
-                    </label>
-                    <div className="relative flex items-center group">
-                      <KeyRound className="absolute left-3.5 size-5 text-stone-400 group-focus-within:text-amber-500 transition-colors" />
-                      <input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type="password"
-                        autoComplete="new-password"
-                        required={!isLogin}
-                        className="bg-white/50 text-stone-900 placeholder-stone-400 block w-full rounded-xl border border-stone-200/80 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] focus:border-amber-400 focus:ring-amber-400 focus:bg-white pl-11 pr-4 py-3.5 transition-all duration-200 outline-none"
-                        placeholder="Nhập lại mật khẩu"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
 
             <AnimatePresence>
@@ -261,17 +157,6 @@ export default function LoginPage() {
                   className="text-red-700 text-[13px] text-center bg-red-50 p-3 rounded-xl border border-red-100/50 font-medium"
                 >
                   {error}
-                </motion.div>
-              )}
-
-              {successMessage && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: "auto" }}
-                  exit={{ opacity: 0, y: -10, height: 0 }}
-                  className="text-teal-700 text-[13px] text-center bg-teal-50 p-3 rounded-xl border border-teal-100/50 font-medium"
-                >
-                  {successMessage}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -286,17 +171,10 @@ export default function LoginPage() {
                   <span className="flex items-center gap-2.5">
                     <svg
                       className="animate-spin -ml-1 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
                     >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
                       <path
                         className="opacity-75"
                         fill="currentColor"
@@ -306,40 +184,18 @@ export default function LoginPage() {
                     Đang xử lý...
                   </span>
                 ) : (
-                  <>
-                    {isLogin ? "Đăng nhập" : "Tạo tài khoản"}
-                    {!isLogin && <UserPlus className="size-4 ml-1" />}
-                  </>
+                  "Đăng nhập"
                 )}
               </button>
 
-              <div className="relative flex items-center py-2 opacity-60">
-                <div className="grow border-t border-stone-200"></div>
-                <span className="shrink-0 mx-4 text-stone-400 text-[11px] uppercase tracking-wider font-bold">
-                  Hoặc
-                </span>
-                <div className="grow border-t border-stone-200"></div>
+              <div className="text-center">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-amber-600 hover:text-amber-700 font-medium transition-colors"
+                >
+                  Quên mật khẩu?
+                </Link>
               </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (isLogin && isDemo) {
-                    setError(
-                      "Đây là trang demo, bạn không cần phải tạo tài khoản. Hãy sử dụng tài khoản demo để truy cập với toàn bộ quyền.",
-                    );
-                    return;
-                  }
-                  setIsLogin(!isLogin);
-                  setError(null);
-                  setSuccessMessage(null);
-                }}
-                className="w-full text-sm font-semibold text-stone-600 hover:text-stone-900 bg-white hover:bg-stone-50 border border-stone-200/80 py-3.5 rounded-xl shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] focus:outline-none transition-all duration-200"
-              >
-                {isLogin
-                  ? "Chưa có tài khoản? Đăng ký ngay"
-                  : "Đã có tài khoản? Đăng nhập"}
-              </button>
             </div>
           </form>
         </motion.div>

@@ -4,12 +4,13 @@ import {
   adminCreateUser,
   changeUserRole,
   deleteUser,
+  resetUserPassword,
   toggleUserStatus,
 } from "@/app/actions/user";
 import config from "@/app/config";
 import { AdminUserData, UserRole } from "@/types";
 import { AnimatePresence, motion } from "framer-motion";
-import { Trash } from "lucide-react";
+import { KeyRound, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface AdminUserListProps {
@@ -32,6 +33,10 @@ export default function AdminUserList({
   const [isCreating, setIsCreating] = useState(false);
   const [notification, setNotification] = useState<Notification | null>(null);
   const [isDemo, setIsDemo] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetUserId, setResetUserId] = useState<string>("");
+  const [resetEmail, setResetEmail] = useState<string>("");
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -149,6 +154,65 @@ export default function AdminUserList({
       showNotification(msg, "error");
     } finally {
       setLoadingId(null);
+    }
+  };
+
+  const handleResetPassword = async (userId: string, email: string) => {
+    if (isDemo) {
+      showNotification(
+        "Đây là tài khoản demo cho mọi người sử dụng, vui lòng không thay đổi thông tin này.",
+        "info",
+      );
+      return;
+    }
+
+    // Set user info và mở modal
+    setResetUserId(userId);
+    setResetEmail(email);
+    setIsResetModalOpen(true);
+  };
+
+  const handleResetPasswordSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.currentTarget);
+    const newPassword = formData.get("password")?.toString();
+    const confirmPassword = formData.get("confirmPassword")?.toString();
+
+    if (!newPassword || newPassword.length < 6) {
+      showNotification("Mật khẩu phải có ít nhất 6 ký tự.", "error");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      showNotification("Mật khẩu xác nhận không khớp.", "error");
+      return;
+    }
+
+    try {
+      setIsResetting(true);
+      const result = await resetUserPassword(resetUserId, newPassword);
+
+      if (result?.error) {
+        showNotification(result.error, "error");
+        return;
+      }
+
+      showNotification(
+        `Đã reset mật khẩu cho ${resetEmail} thành công.`,
+        "success",
+      );
+      setIsResetModalOpen(false);
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Lỗi không xác định khi reset mật khẩu";
+      showNotification(msg, "error");
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -371,6 +435,18 @@ export default function AdminUserList({
                     {user.id !== currentUserId && (
                       <div className="flex justify-end items-center gap-2">
                         <button
+                          title="Reset mật khẩu"
+                          disabled={loadingId === user.id}
+                          onClick={() => {
+                            setResetUserId(user.id);
+                            setResetEmail(user.email);
+                            setIsResetModalOpen(true);
+                          }}
+                          className="p-1.5 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors disabled:opacity-50"
+                        >
+                          <KeyRound className="size-4" />
+                        </button>
+                        <button
                           title="Xoá người dùng"
                           disabled={loadingId === user.id}
                           onClick={() => handleDelete(user.id)}
@@ -502,6 +578,95 @@ export default function AdminUserList({
                   className="btn-primary"
                 >
                   {isCreating ? "Đang tạo..." : "Tạo người dùng"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {isResetModalOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm transition-opacity duration-300">
+          <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-stone-200/60 w-full max-w-md overflow-hidden transform transition-all">
+            <div className="px-6 py-5 border-b border-stone-100/80 flex justify-between items-center bg-stone-50/50">
+              <h3 className="text-xl font-serif font-bold text-stone-800">
+                Reset Mật Khẩu
+              </h3>
+              <button
+                onClick={() => setIsResetModalOpen(false)}
+                className="text-stone-400 hover:text-stone-600 transition-colors size-8 flex items-center justify-center hover:bg-stone-100 rounded-full"
+              >
+                <svg
+                  className="size-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleResetPasswordSubmit} className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
+                    Email người dùng
+                  </label>
+                  <div className="w-full px-3 py-2 bg-stone-50 text-stone-900 border border-stone-200 rounded-lg">
+                    {resetEmail}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
+                    Mật khẩu mới <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    required
+                    minLength={6}
+                    className="w-full px-3 py-2 bg-white text-stone-900 placeholder-stone-400 border border-stone-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+                    placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
+                    Xác nhận mật khẩu <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    required
+                    minLength={6}
+                    className="w-full px-3 py-2 bg-white text-stone-900 placeholder-stone-400 border border-stone-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+                    placeholder="Nhập lại mật khẩu mới"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsResetModalOpen(false)}
+                  className="btn"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isResetting}
+                  className="btn-primary"
+                >
+                  {isResetting ? "Đang reset..." : "Reset Mật Khẩu"}
                 </button>
               </div>
             </form>

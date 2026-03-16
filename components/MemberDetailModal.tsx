@@ -3,28 +3,27 @@
 import MemberDetailContent from "@/components/MemberDetailContent";
 import MemberForm from "@/components/MemberForm";
 import { Person } from "@/types";
+import { createClient } from "@/utils/supabase/client";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, ArrowLeft, Edit2, ExternalLink, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useDashboard } from "./DashboardContext";
-import { useUser } from "./UserProvider";
 
 export default function MemberDetailModal() {
-  const {
-    memberModalId: memberId,
-    setMemberModalId,
-    showCreateMember,
-    setShowCreateMember,
-  } = useDashboard();
-  const { isAdmin, isEditor: canEdit, supabase } = useUser();
+  const { memberModalId: memberId, setMemberModalId } = useDashboard();
   const router = useRouter();
+  const supabase = createClient();
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [canEdit, setCanEdit] = useState(false);
 
   const [person, setPerson] = useState<Person | null>(null);
   const [privateData, setPrivateData] = useState<Record<
@@ -34,7 +33,6 @@ export default function MemberDetailModal() {
 
   const closeModal = () => {
     setMemberModalId(null);
-    setShowCreateMember(false);
     setIsEditing(false);
   };
 
@@ -43,7 +41,29 @@ export default function MemberDetailModal() {
       setLoading(true);
       setError(null);
       try {
-        // 1. Fetch Person Public Data
+        // 1. Check auth / role
+        let currentIsAdmin = isAdmin;
+        let currentCanEdit = canEdit;
+        if (!authChecked) {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("role")
+              .eq("id", user.id)
+              .single();
+            currentIsAdmin = profile?.role === "admin";
+            currentCanEdit =
+              profile?.role === "admin" || profile?.role === "editor";
+            setIsAdmin(currentIsAdmin);
+            setCanEdit(currentCanEdit);
+          }
+          setAuthChecked(true);
+        }
+
+        // 2. Fetch Person Public Data
         const { data: personData, error: personError } = await supabase
           .from("persons")
           .select("*")
@@ -55,16 +75,14 @@ export default function MemberDetailModal() {
         }
         setPerson(personData);
 
-        // 2. Fetch Private Data if Admin
-        if (isAdmin) {
+        // 3. Fetch Private Data if Admin
+        if (currentIsAdmin) {
           const { data: privData } = await supabase
             .from("person_details_private")
             .select("*")
             .eq("person_id", id)
             .single();
           setPrivateData(privData || {});
-        } else {
-          setPrivateData(null);
         }
       } catch (err) {
         console.error("Error fetching member details:", err);
@@ -74,21 +92,15 @@ export default function MemberDetailModal() {
         setLoading(false);
       }
     },
-    [isAdmin, supabase],
+    [isAdmin, canEdit, authChecked, supabase],
   );
 
-  // Sync state with URL parameter or create mode
+  // Sync state with URL parameter
   useEffect(() => {
     if (memberId) {
       setIsOpen(true);
       setIsEditing(false); // always start on detail view when opening
       fetchData(memberId);
-    } else if (showCreateMember) {
-      setIsOpen(true);
-      setIsEditing(false);
-      setPerson(null);
-      setPrivateData(null);
-      setError(null);
     } else {
       setIsOpen(false);
       setTimeout(() => {
@@ -98,7 +110,7 @@ export default function MemberDetailModal() {
         setIsEditing(false);
       }, 300);
     }
-  }, [memberId, showCreateMember, fetchData]);
+  }, [memberId, fetchData]);
 
   // Prevent background scrolling when modal is open
   useEffect(() => {
@@ -119,20 +131,8 @@ export default function MemberDetailModal() {
     setPerson(null);
     setPrivateData(null);
     fetchData(savedPersonId);
-    // Revalidate Next.js server component cache so the dashboard list/members updates
+    // Revalidate Next.js server component cache so the dashboard list/tree updates
     router.refresh();
-  };
-
-  // Called by MemberForm after a successful CREATE
-  const handleCreateSuccess = (savedPersonId: string) => {
-    setShowCreateMember(false);
-    // Open the detail modal for the new member
-    setMemberModalId(savedPersonId);
-    // Delay refresh so React commits state changes first,
-    // ensuring the server component re-fetches the updated member list.
-    setTimeout(() => {
-      router.refresh();
-    }, 100);
   };
 
   // initialData for MemberForm — merge public + private
@@ -150,8 +150,8 @@ export default function MemberDetailModal() {
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 bg-stone-900/40 backdrop-blur-sm"
         >
-          {/* Click-away backdrop (disabled while editing/creating to avoid accidental close) */}
-          {!isEditing && !showCreateMember && (
+          {/* Click-away backdrop (disabled while editing to avoid accidental close) */}
+          {!isEditing && (
             <div
               className="absolute inset-0 cursor-pointer"
               onClick={closeModal}
@@ -169,34 +169,39 @@ export default function MemberDetailModal() {
             {/* Sticky Header Actions */}
             <div className="absolute top-4 right-4 sm:top-5 sm:right-5 z-20 flex items-center gap-2">
               {isEditing ? (
-                /* In edit mode — show back button */
+                /* In edit mode — show "Back to detail" button */
                 <button
-                  onClick={() => {
-                    setIsEditing(false);
-                  }}
+                  onClick={() => setIsEditing(false)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-stone-100/80 text-stone-700 rounded-full hover:bg-stone-200 font-semibold text-sm shadow-sm border border-stone-200/50 transition-colors"
                 >
                   <ArrowLeft className="size-4" />
-                  <span className="hidden sm:inline">Quay lại</span>
+                  <span className="hidden sm:inline">Xem chi tiết</span>
                 </button>
               ) : (
-                canEdit &&
                 person && (
                   <>
+                    <Link
+                      href={`/biography?person_id=${person.id}`}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-amber-100/80 text-amber-800 rounded-full hover:bg-amber-200 font-semibold text-sm shadow-sm border border-amber-200/50 transition-colors"
+                    >
+                      Tiểu sử
+                    </Link>
                     <Link
                       href={`/dashboard/members/${person.id}`}
                       className="flex items-center gap-1.5 px-4 py-2 bg-amber-100/80 text-amber-800 rounded-full hover:bg-amber-200 font-semibold text-sm shadow-sm border border-amber-200/50 transition-colors"
                     >
                       <ExternalLink className="size-4" />
-                      <span className="hidden sm:inline">Xem</span>
+                      <span className="hidden sm:inline">Xem chi tiết</span>
                     </Link>
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-amber-100/80 text-amber-800 rounded-full hover:bg-amber-200 font-semibold text-sm shadow-sm border border-amber-200/50 transition-colors"
-                    >
-                      <Edit2 className="size-4" />
-                      <span className="hidden sm:inline">Chỉnh sửa</span>
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-amber-100/80 text-amber-800 rounded-full hover:bg-amber-200 font-semibold text-sm shadow-sm border border-amber-200/50 transition-colors"
+                      >
+                        <Edit2 className="size-4" />
+                        <span className="hidden sm:inline">Chỉnh sửa</span>
+                      </button>
+                    )}
                   </>
                 )
               )}
@@ -243,18 +248,6 @@ export default function MemberDetailModal() {
                   isAdmin={isAdmin}
                   onSuccess={handleEditSuccess}
                   onCancel={() => setIsEditing(false)}
-                />
-              </div>
-            ) : showCreateMember ? (
-              /* ── CREATE MODE ── */
-              <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-8 pt-16 pb-8">
-                <h2 className="text-xl font-serif font-bold text-stone-800 mb-6">
-                  Thêm thành viên mới
-                </h2>
-                <MemberForm
-                  isAdmin={isAdmin}
-                  onSuccess={handleCreateSuccess}
-                  onCancel={closeModal}
                 />
               </div>
             ) : person ? (

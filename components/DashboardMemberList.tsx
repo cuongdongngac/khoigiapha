@@ -3,94 +3,107 @@
 import PersonCard from "@/components/PersonCard";
 import { Person } from "@/types";
 import { ArrowUpDown, Filter, Plus, Search } from "lucide-react";
-import { useMemo, useState } from "react";
-import { useDashboard } from "./DashboardContext";
+import Link from "next/link";
+import { useState, useEffect } from "react";
 
 export default function DashboardMemberList({
   initialPersons,
   canEdit = false,
+  totalCount: propTotalCount,
 }: {
   initialPersons: Person[];
   canEdit?: boolean;
+  totalCount?: number;
 }) {
-  const { setShowCreateMember } = useDashboard();
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortOption, setSortOption] = useState("generation_asc");
+  const [sortOption, setSortOption] = useState("updated_desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(50);
+  const [totalCount, setTotalCount] = useState(propTotalCount || 0);
+  const [loading, setLoading] = useState(false);
 
   const [filterOption, setFilterOption] = useState("all");
 
-  const filteredPersons = useMemo(() => {
-    return initialPersons.filter((person) => {
-      const matchesSearch = person.full_name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+  const filteredPersons = initialPersons.filter((person) => {
+    // Search in both full_name and other_names
+    const searchTermLower = searchTerm.toLowerCase();
+    const matchesSearch =
+      person.full_name.toLowerCase().includes(searchTermLower) ||
+      (person.other_names &&
+        person.other_names.toLowerCase().includes(searchTermLower));
 
-      let matchesFilter = true;
-      switch (filterOption) {
-        case "male":
-          matchesFilter = person.gender === "male";
-          break;
-        case "female":
-          matchesFilter = person.gender === "female";
-          break;
-        case "in_law_female":
-          matchesFilter = person.gender === "female" && person.is_in_law;
-          break;
-        case "in_law_male":
-          matchesFilter = person.gender === "male" && person.is_in_law;
-          break;
-        case "deceased":
-          matchesFilter = person.is_deceased;
-          break;
-        case "first_child":
-          matchesFilter = person.birth_order === 1;
-          break;
-        case "all":
-        default:
-          matchesFilter = true;
-          break;
-      }
+    let matchesFilter = true;
+    switch (filterOption) {
+      case "male":
+        matchesFilter = person.gender === "male";
+        break;
+      case "female":
+        matchesFilter = person.gender === "female";
+        break;
+      case "in_law_female":
+        matchesFilter = person.gender === "female" && person.is_in_law;
+        break;
+      case "in_law_male":
+        matchesFilter = person.gender === "male" && person.is_in_law;
+        break;
+      case "deceased":
+        matchesFilter = person.is_deceased;
+        break;
+      case "first_child":
+        matchesFilter = person.birth_order === 1;
+        break;
+      case "all":
+      default:
+        matchesFilter = true;
+        break;
+    }
 
-      return matchesSearch && matchesFilter;
-    });
-  }, [initialPersons, searchTerm, filterOption]);
+    return matchesSearch && matchesFilter;
+  });
 
-  const sortedPersons = useMemo(() => {
-    return [...filteredPersons].sort((a, b) => {
-      switch (sortOption) {
-        case "birth_asc":
-          return (a.birth_year || 9999) - (b.birth_year || 9999);
-        case "birth_desc":
-          return (b.birth_year || 0) - (a.birth_year || 0);
-        case "name_asc":
-          return a.full_name.localeCompare(b.full_name, "vi");
-        case "name_desc":
-          return b.full_name.localeCompare(a.full_name, "vi");
-        case "updated_desc":
-          return (
-            new Date(b.updated_at || 0).getTime() -
-            new Date(a.updated_at || 0).getTime()
-          );
-        case "updated_asc":
-          return (
-            new Date(a.updated_at || 0).getTime() -
-            new Date(b.updated_at || 0).getTime()
-          );
-        case "generation_asc":
-          if (a.generation !== b.generation) {
-            return (a.generation || 999) - (b.generation || 999);
-          }
-          return (a.birth_order || 999) - (b.birth_order || 999);
-        case "generation_desc":
-          if (b.generation !== a.generation) {
-            return (b.generation || 0) - (a.generation || 0);
-          }
-          return (b.birth_order || 0) - (a.birth_order || 0);
-        default:
-          return 0;
-      }
-    });
-  }, [filteredPersons, sortOption]);
+  // Sort filtered persons
+  const sortedPersons = [...filteredPersons].sort((a, b) => {
+    switch (sortOption) {
+      case "name_asc":
+        return a.full_name.localeCompare(b.full_name);
+      case "name_desc":
+        return b.full_name.localeCompare(a.full_name);
+      case "birth_asc":
+        return (a.birth_year || 0) - (b.birth_year || 0);
+      case "birth_desc":
+        return (b.birth_year || 0) - (a.birth_year || 0);
+      case "updated_asc":
+        return (
+          new Date(a.updated_at || 0).getTime() -
+          new Date(b.updated_at || 0).getTime()
+        );
+      case "updated_desc":
+      default:
+        return (
+          new Date(b.updated_at || 0).getTime() -
+          new Date(a.updated_at || 0).getTime()
+        );
+    }
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(sortedPersons.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedPersons = sortedPersons.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    setTotalCount(filteredPersons.length);
+  }, [filteredPersons]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Reset to page 1 when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterOption]);
 
   return (
     <>
@@ -177,61 +190,20 @@ export default function DashboardMemberList({
             </div>
           </div>
           {canEdit && (
-            <button
-              onClick={() => setShowCreateMember(true)}
-              className="btn-primary"
-            >
+            <Link href="/dashboard/members/new" className="btn-primary">
               <Plus className="size-4" strokeWidth={2.5} />
               Thêm thành viên
-            </button>
+            </Link>
           )}
         </div>
       </div>
 
-      {sortedPersons.length > 0 ? (
-        sortOption.includes("generation") ? (
-          <div className="space-y-12">
-            {Object.entries(
-              sortedPersons.reduce(
-                (acc, person) => {
-                  const gen = person.generation || 0;
-                  if (!acc[gen]) acc[gen] = [];
-                  acc[gen].push(person);
-                  return acc;
-                },
-                {} as Record<number, Person[]>,
-              ),
-            )
-              .sort(([genA], [genB]) => {
-                if (sortOption === "generation_desc") {
-                  return Number(genB) - Number(genA);
-                }
-                return Number(genA) - Number(genB);
-              })
-              .map(([gen, persons]) => (
-                <div key={gen} className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-px flex-1 bg-stone-200"></div>
-                    <h3 className="text-lg font-serif font-bold text-amber-800 bg-amber-50 px-4 py-1.5 rounded-full border border-amber-200/50 shadow-sm">
-                      {gen === "0" ? "Chưa xác định đời" : `Đời thứ ${gen}`}
-                    </h3>
-                    <div className="h-px flex-1 bg-stone-200"></div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {persons.map((person) => (
-                      <PersonCard key={person.id} person={person} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedPersons.map((person) => (
-              <PersonCard key={person.id} person={person} />
-            ))}
-          </div>
-        )
+      {paginatedPersons.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {paginatedPersons.map((person) => (
+            <PersonCard key={person.id} person={person} />
+          ))}
+        </div>
       ) : (
         <div className="text-center py-12 text-stone-400 italic">
           {initialPersons.length > 0
@@ -239,6 +211,50 @@ export default function DashboardMemberList({
             : "Chưa có thành viên nào. Hãy thêm thành viên đầu tiên."}
         </div>
       )}
+
+      {/* Pagination */}
+      {sortedPersons.length > pageSize && (
+        <div className="flex justify-center items-center gap-2 mt-8">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-2 border border-stone-300 rounded-lg hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Trước
+          </button>
+
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`w-10 h-10 rounded-lg border transition-colors ${
+                  currentPage === page
+                    ? "bg-amber-500 text-white border-amber-500"
+                    : "border-stone-300 hover:bg-stone-50 text-stone-700"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-3 py-2 border border-stone-300 rounded-lg hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Sau
+          </button>
+        </div>
+      )}
+
+      {/* Results Info */}
+      <div className="text-center text-sm text-stone-600 mt-4">
+        Hiển thị {paginatedPersons.length} / {sortedPersons.length} thành viên
+        {sortedPersons.length > pageSize &&
+          ` - Trang ${currentPage}/${totalPages}`}
+      </div>
     </>
   );
 }

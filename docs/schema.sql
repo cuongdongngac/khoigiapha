@@ -66,9 +66,6 @@ CREATE TABLE IF NOT EXISTS public.persons (
   death_year INT,
   death_month INT,
   death_day INT,
-  death_lunar_year INT,
-  death_lunar_month INT,
-  death_lunar_day INT,
   
   is_deceased BOOLEAN NOT NULL DEFAULT FALSE,
   is_in_law BOOLEAN NOT NULL DEFAULT FALSE,

@@ -7,8 +7,6 @@ import { ViewMode } from "./ViewToggle";
 interface DashboardState {
   memberModalId: string | null;
   setMemberModalId: (id: string | null) => void;
-  showCreateMember: boolean;
-  setShowCreateMember: (show: boolean) => void;
   showAvatar: boolean;
   setShowAvatar: (show: boolean) => void;
   view: ViewMode;
@@ -24,22 +22,20 @@ export const DashboardContext = createContext<DashboardState | undefined>(
 export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const [memberModalId, setMemberModalId] = useState<string | null>(null);
-  const [showCreateMember, setShowCreateMember] = useState(false);
   const [showAvatar, setShowAvatar] = useState<boolean>(true);
   const [view, setViewState] = useState<ViewMode>("list");
   const [rootId, setRootIdState] = useState<string | null>(null);
 
-  // Initialize from URL once on mount (or when searchParams actually change from server init)
-  // We use a ref or just simple effect
+  // Keep state in sync with URL query params (so deep-links can switch tabs)
   useEffect(() => {
     const avatarParam = searchParams.get("avatar");
     setShowAvatar(avatarParam !== "hide");
 
     const viewParam = searchParams.get("view") as ViewMode;
-    if (viewParam) setViewState(viewParam);
+    if (viewParam && viewParam !== view) setViewState(viewParam);
 
     const rootIdParam = searchParams.get("rootId");
-    if (rootIdParam) setRootIdState(rootIdParam);
+    if (rootIdParam !== rootId) setRootIdState(rootIdParam);
 
     // We intentionally ignore memberModalId in the Next.js router loop
     // to avoid Next.js triggering re-renders on push.
@@ -51,8 +47,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         setMemberModalId(modalId);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams, memberModalId, rootId, view]);
 
   // Sync to URL silently
   const updateModalId = (id: string | null) => {
@@ -108,8 +103,6 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       value={{
         memberModalId,
         setMemberModalId: updateModalId,
-        showCreateMember,
-        setShowCreateMember,
         showAvatar,
         setShowAvatar: updateAvatar,
         view,
@@ -131,8 +124,6 @@ export function useDashboard(): DashboardState {
     return {
       memberModalId: null,
       setMemberModalId: () => {},
-      showCreateMember: false,
-      setShowCreateMember: () => {},
       showAvatar: true,
       setShowAvatar: () => {},
       view: "list",

@@ -1,15 +1,30 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, Info, Network, UserCircle } from "lucide-react";
+import {
+  BarChart2,
+  CalendarClock,
+  ChevronDown,
+  Database,
+  GitMerge,
+  Info,
+  KeyRound,
+  Network,
+  Search,
+  UserCircle,
+  Users,
+  FileText,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import LogoutButton from "./LogoutButton";
-import { useUser } from "./UserProvider";
 
-export default function HeaderMenu() {
-  const { user } = useUser();
-  const userEmail = user?.email;
+interface HeaderMenuProps {
+  isAdmin: boolean;
+  userEmail?: string;
+}
+
+export default function HeaderMenu({ isAdmin, userEmail }: HeaderMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -61,24 +76,94 @@ export default function HeaderMenu() {
             </div>
 
             <div className="py-1">
+              {isAdmin && (
+                <>
+                  <Link
+                    href="/dashboard/users"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                  >
+                    <Users className="size-4" />
+                    Quản lý Người dùng
+                  </Link>
+                  <Link
+                    href="/dashboard/simple-logs"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                  >
+                    <FileText className="size-4" />
+                    Nhật ký hoạt động
+                  </Link>
+                  <Link
+                    href="/dashboard/lineage"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                  >
+                    <Network className="size-4" />
+                    Thứ tự gia phả
+                  </Link>
+                  <Link
+                    href="/dashboard/data"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                  >
+                    <Database className="size-4" />
+                    Sao lưu & Phục hồi
+                  </Link>
+                </>
+              )}
               <Link
-                href="/dashboard"
+                href="/dashboard/events"
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors"
               >
-                <Network className="size-4" />
-                Bảng điều khiển
+                <CalendarClock className="size-4" />
+                Sự kiện
               </Link>
-
+              <Link
+                href="/dashboard/kinship"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+              >
+                <GitMerge className="size-4" />
+                Tra cứu danh xưng
+              </Link>
+              <Link
+                href="/dashboard/stats"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+              >
+                <BarChart2 className="size-4" />
+                Thống kê gia phả
+              </Link>
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  // Open change password modal
+                  const event = new CustomEvent("openChangePasswordModal");
+                  window.dispatchEvent(event);
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors w-full text-left"
+              >
+                <KeyRound className="size-4" />
+                Đổi mật khẩu
+              </button>
+              <Link
+                href="/dashboard/lineage-search"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors w-full text-left"
+              >
+                <Search className="size-4" />
+                Truy Nguồn Gốc
+              </Link>
               <Link
                 href="/about"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-rose-700 hover:bg-rose-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors"
               >
                 <Info className="size-4" />
-                Giới thiệu
+                Giới thiệu & Liên hệ
               </Link>
-
               <LogoutButton />
             </div>
           </motion.div>

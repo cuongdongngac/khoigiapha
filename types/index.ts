@@ -41,19 +41,18 @@ export interface Person {
   occupation?: string | null;
   current_residence?: string | null;
 
-  // Lunar Date
-  death_lunar_year: number | null;
-  death_lunar_month: number | null;
-  death_lunar_day: number | null;
-
   // New fields
   is_deceased: boolean;
   is_in_law: boolean;
+  is_notable: boolean;
   birth_order: number | null;
   generation: number | null;
+  branch_id: number | null;
   other_names: string | null;
 }
-
+export interface PersonCard extends Person {
+  branches?: BranchOption | null;
+}
 export interface Relationship {
   id: string;
   type: RelationshipType;
@@ -69,4 +68,9 @@ export interface PersonWithDetails extends Person {
   spouses?: Person[];
   children?: Person[];
   parents?: Person[];
+}
+
+export interface BranchOption {
+  id: number
+  name: string
 }

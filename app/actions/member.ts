@@ -1,12 +1,28 @@
 "use server";
 
-import { getProfile, getSupabase } from "@/utils/supabase/queries";
+import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export async function deleteMemberProfile(memberId: string) {
-  const profile = await getProfile();
-  const supabase = await getSupabase();
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  // 1. Verify Authentication & Authorization
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Vui lòng đăng nhập." };
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
 
   if (profile?.role !== "admin" && profile?.role !== "editor") {
     return {
@@ -45,6 +61,7 @@ export async function deleteMemberProfile(memberId: string) {
   }
 
   // 4. Revalidate and redirect
+  revalidatePath("/dashboard");
   revalidatePath("/dashboard/members");
-  redirect("/dashboard/members");
+  redirect("/dashboard");
 }

@@ -1,15 +1,29 @@
 import LineageManager from "@/components/LineageManager";
-import { getProfile, getSupabase } from "@/utils/supabase/queries";
+import { createClient } from "@/utils/supabase/server";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function LineagePage() {
-  const profile = await getProfile();
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
 
   if (profile?.role !== "admin") {
     redirect("/dashboard");
   }
-
-  const supabase = await getSupabase();
 
   const { data: personsData } = await supabase
     .from("persons")
@@ -26,7 +40,9 @@ export default async function LineagePage() {
       <div className="max-w-7xl mx-auto px-4 pb-8 sm:px-6 lg:px-8 w-full relative z-10">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="title">Thứ tự gia phả</h1>
+          <h2 className="text-3xl font-serif font-bold text-stone-800 tracking-tight">
+            Thứ tự gia phả
+          </h2>
           <p className="text-stone-500 mt-2 text-sm sm:text-base max-w-2xl">
             Tự động tính toán và cập nhật{" "}
             <strong className="text-stone-700">thế hệ</strong> (đời thứ mấy tính

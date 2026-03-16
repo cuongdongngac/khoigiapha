@@ -48,6 +48,15 @@ export default function Footer({
           >
             HomieLab
           </a>
+          <span className="text-stone-500">|</span>
+          <a
+            href="https://www.facebook.com/pham.v.cuong.750/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-blue-600 hover:text-amber-700 transition-colors inline-flex items-center gap-1.5"
+          >
+            Phạm Việt Cường
+          </a>
         </p>
       </div>
     </footer>

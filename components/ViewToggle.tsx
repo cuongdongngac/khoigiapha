@@ -1,29 +1,54 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { List, ListTree, Network } from "lucide-react";
+import {
+  List,
+  ListTree,
+  Network,
+  GitBranch,
+  BookOpen,
+  Filter,
+  Users,
+} from "lucide-react";
 import { useDashboard } from "./DashboardContext";
+import { useRouter } from "next/navigation";
 
-export type ViewMode = "list" | "tree" | "mindmap";
+export type ViewMode =
+  | "list"
+  | "members_filter"
+  | "tree"
+  | "mindmap"
+  | "branches"
+  | "introduction"
+  | "notables";
 
 export default function ViewToggle() {
   const { view: currentView, setView } = useDashboard();
+  const router = useRouter();
 
   const tabs = [
     {
-      id: "list",
-      label: "Danh sách",
-      icon: <List className="size-6 sm:size-4" />,
+      id: "introduction",
+      label: "Giới thiệu",
+      icon: <BookOpen className="size-4" />,
+    },
+    { id: "list", label: "Danh sách", icon: <List className="size-4" /> },
+    {
+      id: "members_filter",
+      label: "Lọc chi/đời",
+      icon: <Filter className="size-4" />,
+    },
+    { id: "tree", label: "Sơ đồ cây", icon: <Network className="size-4" /> },
+    { id: "mindmap", label: "Mindmap", icon: <ListTree className="size-4" /> },
+    {
+      id: "branches",
+      label: "Các chi",
+      icon: <GitBranch className="size-4" />,
     },
     {
-      id: "tree",
-      label: "Sơ đồ cây",
-      icon: <Network className="size-6 sm:size-4" />,
-    },
-    {
-      id: "mindmap",
-      label: "Mindmap",
-      icon: <ListTree className="size-6 sm:size-4" />,
+      id: "notables",
+      label: "Danh nhân dòng họ",
+      icon: <Users className="size-4" />,
     },
   ] as const;
 
@@ -31,10 +56,13 @@ export default function ViewToggle() {
     <div className="flex bg-stone-200/50 p-1.5 rounded-full shadow-inner w-fit mx-auto mt-4 mb-2 relative border border-stone-200/60 backdrop-blur-sm z-10">
       {tabs.map((tab) => {
         const isActive = currentView === tab.id;
+
         return (
           <button
             key={tab.id}
-            onClick={() => setView(tab.id as ViewMode)}
+            onClick={() => {
+              setView(tab.id as ViewMode);
+            }}
             className={`relative px-4 sm:px-6 py-1.5 sm:py-2.5 text-sm font-semibold rounded-full transition-colors duration-300 ease-in-out z-10 flex items-center gap-2 ${
               isActive
                 ? "text-stone-900"
@@ -48,12 +76,16 @@ export default function ViewToggle() {
                 transition={{ type: "spring", stiffness: 450, damping: 30 }}
               />
             )}
+
             <span
-              className={`transition-colors duration-300 ${isActive ? "text-amber-700" : "text-stone-400"}`}
+              className={`transition-colors duration-300 ${
+                isActive ? "text-amber-700" : "text-stone-400"
+              }`}
             >
               {tab.icon}
             </span>
-            <span className="hidden sm:block tracking-wide">{tab.label}</span>
+
+            <span className="tracking-wide">{tab.label}</span>
           </button>
         );
       })}

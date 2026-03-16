@@ -1,17 +1,32 @@
 import MemberForm from "@/components/MemberForm";
-import { getProfile, getSupabase } from "@/utils/supabase/queries";
-import { ArrowLeft } from "lucide-react";
+import { createClient } from "@/utils/supabase/server";
+import { cookies } from "next/headers";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function EditMemberPage({ params }: PageProps) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
   const { id } = await params;
 
-  const profile = await getProfile();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  // Check if user is admin - strict check for editing
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
 
   if (profile?.role !== "admin" && profile?.role !== "editor") {
     return (
@@ -27,8 +42,6 @@ export default async function EditMemberPage({ params }: PageProps) {
       </div>
     );
   }
-
-  const supabase = await getSupabase();
 
   // Fetch Public Data
   const { data: person, error } = await supabase
@@ -57,16 +70,15 @@ export default async function EditMemberPage({ params }: PageProps) {
       {/* <div className="absolute top-[40%] -right-[10%] w-[400px] h-[400px] bg-stone-300/20 rounded-full blur-[100px] pointer-events-none" /> */}
 
       <div className="w-full relative z-20 py-4 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/dashboard/members/${id}`}
-            className="p-2 -ml-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
-            title="Quay lại danh sách"
-          >
-            <ArrowLeft className="size-5" />
-          </Link>
-          <h1 className="title">Chỉnh Sửa Thành Viên</h1>
-        </div>
+        <h1 className="text-xl sm:text-2xl font-serif font-bold text-stone-800">
+          Chỉnh Sửa Thành Viên
+        </h1>
+        <Link
+          href={`/dashboard/members/${id}`}
+          className="px-4 py-2 bg-stone-100/80 text-stone-700 rounded-lg hover:bg-stone-200 hover:text-stone-900 font-medium text-sm transition-all shadow-sm"
+        >
+          Hủy
+        </Link>
       </div>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 relative z-10 w-full flex-1">

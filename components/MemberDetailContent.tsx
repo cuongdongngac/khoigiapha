@@ -3,13 +3,13 @@
 import DefaultAvatar from "@/components/DefaultAvatar";
 import RelationshipManager from "@/components/RelationshipManager";
 import { Person } from "@/types";
+import BranchName from "./BrancheName";
 import {
   calculateAge,
   formatDisplayDate,
   getLunarDateString,
-  getSolarDateString,
-  getZodiacAnimal,
   getZodiacSign,
+  getZodiacAnimal,
 } from "@/utils/dateHelpers";
 import { motion, Variants } from "framer-motion";
 import {
@@ -47,10 +47,7 @@ export default function MemberDetailContent({
     person.is_deceased ||
     !!person.death_year ||
     !!person.death_month ||
-    !!person.death_day ||
-    !!person.death_lunar_year ||
-    !!person.death_lunar_month ||
-    !!person.death_lunar_day;
+    !!person.death_day;
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -168,8 +165,9 @@ export default function MemberDetailContent({
                 </span>
               )}
               {person.generation != null && (
-                <span className="text-[10px] sm:text-xs font-sans font-bold rounded-md px-2 py-0.5 whitespace-nowrap shadow-xs border text-emerald-700 bg-emerald-50/60 border-emerald-200/60 uppercase tracking-wider">
-                  Đời thứ {person.generation}
+                <span className="flex items-center gap-2 text-[10px] sm:text-xs font-sans font-bold rounded-md px-2 py-0.5 whitespace-nowrap shadow-xs border text-emerald-700 bg-emerald-50/60 border-emerald-200/60 uppercase tracking-wider">
+                  <span>Đời thứ {person.generation}</span>
+                  <BranchName branchId={person.branch_id} />
                 </span>
               )}
             </h1>
@@ -259,43 +257,24 @@ export default function MemberDetailContent({
                   </div>
                   <div className="space-y-1.5 pl-4 border-l-2 border-stone-100">
                     <p className="text-stone-800 font-semibold text-sm sm:text-base">
-                      {person.death_day ||
-                      person.death_month ||
-                      person.death_year
-                        ? formatDisplayDate(
-                            person.death_year,
-                            person.death_month,
-                            person.death_day,
-                          )
-                        : getSolarDateString(
-                            person.death_lunar_year,
-                            person.death_lunar_month,
-                            person.death_lunar_day,
-                          ) || "Chưa rõ"}
+                      {formatDisplayDate(
+                        person.death_year,
+                        person.death_month,
+                        person.death_day,
+                      )}
                     </p>
                     {(person.death_year ||
                       person.death_month ||
-                      person.death_day ||
-                      person.death_lunar_year ||
-                      person.death_lunar_month ||
-                      person.death_lunar_day) && (
-                      <p className="text-sm font-medium text-stone-500 flex items-center gap-1.5">
+                      person.death_day) && (
+                      <p className="text-xs font-medium text-stone-500 flex items-center gap-1.5">
                         <span className="text-[10px] border border-stone-200/60 bg-stone-50/80 rounded px-1.5 py-0.5">
                           Âm lịch
                         </span>
-                        {person.death_lunar_day ||
-                        person.death_lunar_month ||
-                        person.death_lunar_year
-                          ? formatDisplayDate(
-                              person.death_lunar_year,
-                              person.death_lunar_month,
-                              person.death_lunar_day,
-                            )
-                          : getLunarDateString(
-                              person.death_year,
-                              person.death_month,
-                              person.death_day,
-                            ) || "Chưa rõ"}
+                        {getLunarDateString(
+                          person.death_year,
+                          person.death_month,
+                          person.death_day,
+                        ) || "Chưa rõ"}
                       </p>
                     )}
                   </div>
@@ -306,12 +285,8 @@ export default function MemberDetailContent({
               {(() => {
                 const ageData = calculateAge(
                   person.birth_year,
-                  person.birth_month,
-                  person.birth_day,
                   person.death_year,
-                  person.death_month,
-                  person.death_day,
-                  isDeceased,
+                  person.is_deceased,
                 );
                 if (!ageData) return null;
                 return (
@@ -326,7 +301,7 @@ export default function MemberDetailContent({
                       ></span>
                       <p className="text-[11px] font-bold text-amber-800/60 uppercase tracking-widest">
                         {ageData.isDeceased
-                          ? ageData.age >= 60
+                          ? (ageData.age != null && ageData.age >= 60)
                             ? "Hưởng thọ"
                             : "Hưởng dương"
                           : "Tuổi"}
@@ -334,7 +309,7 @@ export default function MemberDetailContent({
                     </div>
                     <div className="pl-4 relative z-10">
                       <p className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-linear-to-br from-amber-700 to-amber-900 tracking-tight">
-                        {ageData.age}
+                        {ageData.age ?? "?"}
                         <span className="text-xs sm:text-sm font-bold text-amber-700/60 ml-1.5 uppercase tracking-wider">
                           tuổi
                         </span>

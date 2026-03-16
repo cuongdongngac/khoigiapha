@@ -43,26 +43,19 @@ export default function LandingHero({ siteName }: LandingHeroProps) {
         animate="visible"
         variants={staggerContainer}
       >
-        <motion.div
-          className="space-y-6 sm:space-y-8 flex flex-col items-center"
-          variants={fadeIn}
-        >
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-amber-800 bg-white/60 rounded-full shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] border border-amber-200/50 relative overflow-hidden group"
-          >
-            <Sparkles className="size-4 text-amber-500" />
-            Nền tảng gia phả hiện đại & bảo mật
-            <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+        <motion.div className="flex flex-col items-center" variants={fadeIn}>
+          <motion.div whileHover={{ scale: 1.05 }} className="mb-8">
+            <img
+              src="/assets/images/banner.jpg"
+              alt="GIA PHẢ HỌ PHẠM ĐÔNG NGẠC"
+              className="w-full max-w-4xl h-auto rounded-2xl shadow-2xl border-4 border-amber-200"
+            />
           </motion.div>
-
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5rem] font-serif font-bold text-stone-900 tracking-tight leading-[1.1] max-w-4xl">
-            <span className="block">{siteName}</span>
-          </h1>
 
           <p className="text-lg sm:text-xl md:text-2xl text-stone-600 max-w-2xl mx-auto leading-relaxed font-light">
             Gìn giữ và lưu truyền những giá trị, cội nguồn và truyền thống tốt
-            đẹp của dòng họ cho các thế hệ mai sau.
+            đẹp của dòng họ cho các thế hệ mai sau. Xem gia phả công khai hoặc
+            đăng nhập để quản lý.
           </p>
         </motion.div>
 
@@ -70,7 +63,7 @@ export default function LandingHero({ siteName }: LandingHeroProps) {
           className="pt-6 flex flex-col sm:flex-row gap-4 justify-center items-center w-full px-4 sm:px-0 relative"
           variants={fadeIn}
         >
-          {/* Subtle glow behind the button */}
+          {/* Subtle glow behind button */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-16 bg-amber-500/30 blur-2xl rounded-full z-0 hidden sm:block"></div>
 
           <Link
@@ -78,8 +71,18 @@ export default function LandingHero({ siteName }: LandingHeroProps) {
             className="group inline-flex items-center justify-center gap-2 px-8 py-4 sm:px-10 sm:py-5 text-base sm:text-lg font-bold text-white bg-stone-900 border border-stone-800 hover:bg-stone-800 hover:border-stone-700 rounded-2xl shadow-xl shadow-stone-900/10 hover:shadow-2xl hover:shadow-stone-900/20 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 w-full sm:w-auto overflow-hidden relative"
           >
             <span className="relative z-10 flex items-center gap-3">
-              Đăng nhập để xem thông tin
+              Đăng nhập
               <ArrowRight className="size-5 group-hover:translate-x-1.5 transition-transform" />
+            </span>
+          </Link>
+
+          <Link
+            href="/public"
+            className="group inline-flex items-center justify-center gap-2 px-8 py-4 sm:px-10 sm:py-5 text-base sm:text-lg font-bold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 hover:border-amber-300 rounded-2xl shadow-xl shadow-amber-200/10 hover:shadow-2xl hover:shadow-amber-300/20 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 w-full sm:w-auto overflow-hidden relative"
+          >
+            <span className="relative z-10 flex items-center gap-3">
+              Xem gia phả
+              <Users className="size-5 group-hover:scale-110 transition-transform" />
             </span>
           </Link>
         </motion.div>

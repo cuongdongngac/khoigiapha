@@ -2,13 +2,16 @@
 
 import { useDashboard } from "@/components/DashboardContext";
 import DashboardMemberList from "@/components/DashboardMemberList";
+import DashboardMembersBranchGenerationList from "@/components/DashboardMembersBranchGenerationList";
+import FamilyTree from "@/components/FamilyTree";
+import MindmapTree from "@/components/MindmapTree";
 import RootSelector from "@/components/RootSelector";
+import BranchesTable from "@/components/BranchesTable";
+import Introduction from "@/components/Introduction";
+import AudioPlayer from "@/components/AudioPlayer";
+import NotablesList from "@/components/NotablesList";
 import { Person, Relationship } from "@/types";
 import { useMemo } from "react";
-import dynamic from "next/dynamic";
-
-const FamilyTree = dynamic(() => import("@/components/FamilyTree"));
-const MindmapTree = dynamic(() => import("@/components/MindmapTree"));
 
 interface DashboardViewsProps {
   persons: Person[];
@@ -65,21 +68,53 @@ export default function DashboardViews({
   return (
     <>
       <main className="flex-1 overflow-auto bg-stone-50/50 flex flex-col">
-        {currentView !== "list" && persons.length > 0 && activeRootId && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2 w-full flex flex-col sm:flex-row flex-wrap items-center sm:justify-between gap-4 relative z-20">
-            <RootSelector persons={persons} currentRootId={activeRootId} />
-            <div
-              id="tree-toolbar-portal"
-              className="flex items-center gap-2 flex-wrap justify-center"
+        {(currentView === "tree" || currentView === "mindmap") &&
+          persons.length > 0 &&
+          activeRootId && (
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2 w-full flex flex-col sm:flex-row flex-wrap items-center sm:justify-between gap-4 relative z-20">
+              <RootSelector persons={persons} currentRootId={activeRootId} />
+              <div
+                id="tree-toolbar-portal"
+                className="flex items-center gap-2 flex-wrap justify-center"
+              />
+            </div>
+          )}
+
+        {currentView === "list" && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full relative z-10">
+            <DashboardMemberList
+              initialPersons={persons}
+              canEdit={canEdit}
+              totalCount={persons.length}
             />
           </div>
         )}
 
-        {currentView === "list" && (
+        {currentView === "members_filter" && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full relative z-10">
-            <DashboardMemberList initialPersons={persons} canEdit={canEdit} />
+            <DashboardMembersBranchGenerationList persons={persons} />
           </div>
         )}
+
+        {currentView === "branches" && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full relative z-10">
+            <BranchesTable />
+          </div>
+        )}
+
+        {currentView === "introduction" && (
+          <div className="relative">
+            <Introduction />
+            <div className="fixed left-4 bottom-6 z-50">
+              <AudioPlayer
+                title="Giới thiệu làng Kẻ Vẽ"
+                src="https://mediaserver.huph.edu.vn/vod/nas1videos/phahe/gioithieudongngac.mp3"
+              />
+            </div>
+          </div>
+        )}
+
+        {currentView === "notables" && <NotablesList persons={persons} />}
 
         <div className="flex-1 w-full relative z-10">
           {currentView === "tree" && (

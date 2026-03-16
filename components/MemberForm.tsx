@@ -3,9 +3,11 @@
 import { Gender, Person } from "@/types";
 import { createClient } from "@/utils/supabase/client";
 import { AnimatePresence, motion, Variants } from "framer-motion";
+import { BranchSelect } from "@/components/BranchSelect";
 import {
   AlertCircle,
   Briefcase,
+  Calendar,
   Image as ImageIcon,
   Loader2,
   Lock,
@@ -15,7 +17,6 @@ import {
   Trash2,
   User,
 } from "lucide-react";
-import { Lunar, Solar } from "lunar-javascript";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -48,6 +49,13 @@ export default function MemberForm({
   const [birthYear, setBirthYear] = useState<number | "">(
     initialData?.birth_year || "",
   );
+  const [generation, setGeneration] = useState<number | "">(
+    initialData?.generation || "",
+  );
+
+  const [branchId, setBranchId] = useState<number | null>(
+    initialData?.branch_id ?? null,
+  );
   const [birthMonth, setBirthMonth] = useState<number | "">(
     initialData?.birth_month || "",
   );
@@ -65,28 +73,18 @@ export default function MemberForm({
     initialData?.death_day || "",
   );
 
-  const [deathLunarYear, setDeathLunarYear] = useState<number | "">(
-    initialData?.death_lunar_year || "",
-  );
-  const [deathLunarMonth, setDeathLunarMonth] = useState<number | "">(
-    initialData?.death_lunar_month || "",
-  );
-  const [deathLunarDay, setDeathLunarDay] = useState<number | "">(
-    initialData?.death_lunar_day || "",
-  );
-
   const [isDeceased, setIsDeceased] = useState<boolean>(
     initialData?.is_deceased || false,
   );
   const [isInLaw, setIsInLaw] = useState<boolean>(
     initialData?.is_in_law || false,
   );
+  const [isNotable, setIsNotable] = useState<boolean>(
+    initialData?.is_notable || false,
+  );
 
   const [birthOrder, setBirthOrder] = useState<number | "">(
     initialData?.birth_order || "",
-  );
-  const [generation, setGeneration] = useState<number | "">(
-    initialData?.generation || "",
   );
 
   const [avatarUrl, setAvatarUrl] = useState(initialData?.avatar_url || "");
@@ -105,72 +103,6 @@ export default function MemberForm({
   const [currentResidence, setCurrentResidence] = useState(
     initialData?.current_residence || "",
   );
-
-  const handleSolarDeathChange = (
-    field: "day" | "month" | "year",
-    val: string,
-  ) => {
-    const num = val ? Number(val) : "";
-    let d = deathDay;
-    let m = deathMonth;
-    let y = deathYear;
-
-    if (field === "day") {
-      d = num;
-      setDeathDay(num);
-    } else if (field === "month") {
-      m = num;
-      setDeathMonth(num);
-    } else if (field === "year") {
-      y = num;
-      setDeathYear(num);
-    }
-
-    if (d !== "" && m !== "" && y !== "" && y > 100) {
-      try {
-        const solar = Solar.fromYmd(y, m, d);
-        const lunar = solar.getLunar();
-        setDeathLunarDay(lunar.getDay());
-        setDeathLunarMonth(Math.abs(lunar.getMonth()));
-        setDeathLunarYear(lunar.getYear());
-      } catch {
-        // Ignore invalid dates
-      }
-    }
-  };
-
-  const handleLunarDeathChange = (
-    field: "day" | "month" | "year",
-    val: string,
-  ) => {
-    const num = val ? Number(val) : "";
-    let d = deathLunarDay;
-    let m = deathLunarMonth;
-    let y = deathLunarYear;
-
-    if (field === "day") {
-      d = num;
-      setDeathLunarDay(num);
-    } else if (field === "month") {
-      m = num;
-      setDeathLunarMonth(num);
-    } else if (field === "year") {
-      y = num;
-      setDeathLunarYear(num);
-    }
-
-    if (d !== "" && m !== "" && y !== "" && y > 100) {
-      try {
-        const lunar = Lunar.fromYmd(y, m, d);
-        const solar = lunar.getSolar();
-        setDeathDay(solar.getDay());
-        setDeathMonth(solar.getMonth());
-        setDeathYear(solar.getYear());
-      } catch {
-        // Ignore invalid dates
-      }
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,66 +133,7 @@ export default function MemberForm({
       return;
     }
 
-    let finalDeathDay = deathDay;
-    let finalDeathMonth = deathMonth;
-    let finalDeathYear = deathYear;
-    let finalDeathLunarDay = deathLunarDay;
-    let finalDeathLunarMonth = deathLunarMonth;
-    let finalDeathLunarYear = deathLunarYear;
-
-    if (
-      isDeceased &&
-      deathLunarDay !== "" &&
-      deathLunarMonth !== "" &&
-      deathLunarYear !== "" &&
-      (deathDay === "" || deathMonth === "" || deathYear === "")
-    ) {
-      try {
-        const lunarDate = Lunar.fromYmd(
-          deathLunarYear,
-          deathLunarMonth,
-          deathLunarDay,
-        );
-        const solarDate = lunarDate.getSolar();
-        finalDeathDay = solarDate.getDay();
-        finalDeathMonth = solarDate.getMonth();
-        finalDeathYear = solarDate.getYear();
-      } catch {
-        setError("Ngày âm lịch không hợp lệ. Vui lòng kiểm tra lại.");
-        setLoading(false);
-        return;
-      }
-    } else if (
-      isDeceased &&
-      deathDay !== "" &&
-      deathMonth !== "" &&
-      deathYear !== "" &&
-      (deathLunarDay === "" || deathLunarMonth === "" || deathLunarYear === "")
-    ) {
-      // Sync from Solar back to Lunar
-      try {
-        const solarDate = Solar.fromYmd(deathYear, deathMonth, deathDay);
-        const lunarDate = solarDate.getLunar();
-        finalDeathLunarDay = lunarDate.getDay();
-        finalDeathLunarMonth = Math.abs(lunarDate.getMonth());
-        finalDeathLunarYear = lunarDate.getYear();
-      } catch {
-        // Safe fallback if conversion fails
-      }
-    } else if (!isDeceased) {
-      // Clear all
-      finalDeathDay = "";
-      finalDeathMonth = "";
-      finalDeathYear = "";
-      finalDeathLunarDay = "";
-      finalDeathLunarMonth = "";
-      finalDeathLunarYear = "";
-    }
-
-    if (
-      isDeceased &&
-      !isValidDate(finalDeathDay, finalDeathMonth, finalDeathYear)
-    ) {
+    if (isDeceased && !isValidDate(deathDay, deathMonth, deathYear)) {
       setError("Ngày mất không hợp lệ. Vui lòng kiểm tra lại.");
       setLoading(false);
       return;
@@ -269,8 +142,8 @@ export default function MemberForm({
     if (
       isDeceased &&
       birthYear !== "" &&
-      finalDeathYear !== "" &&
-      finalDeathYear < birthYear
+      deathYear !== "" &&
+      deathYear < birthYear
     ) {
       setError("Năm mất phải lớn hơn hoặc bằng năm sinh.");
       setLoading(false);
@@ -306,28 +179,19 @@ export default function MemberForm({
         birth_year: birthYear === "" ? null : Number(birthYear),
         birth_month: birthMonth === "" ? null : Number(birthMonth),
         birth_day: birthDay === "" ? null : Number(birthDay),
-        death_year:
-          isDeceased && finalDeathYear !== "" ? Number(finalDeathYear) : null,
+        death_year: isDeceased && deathYear !== "" ? Number(deathYear) : null,
         death_month:
-          isDeceased && finalDeathMonth !== "" ? Number(finalDeathMonth) : null,
-        death_day:
-          isDeceased && finalDeathDay !== "" ? Number(finalDeathDay) : null,
-        death_lunar_year:
-          isDeceased && finalDeathLunarYear !== ""
-            ? Number(finalDeathLunarYear)
-            : null,
-        death_lunar_month:
-          isDeceased && finalDeathLunarMonth !== ""
-            ? Number(finalDeathLunarMonth)
-            : null,
-        death_lunar_day:
-          isDeceased && finalDeathLunarDay !== ""
-            ? Number(finalDeathLunarDay)
-            : null,
+          isDeceased && deathMonth !== "" ? Number(deathMonth) : null,
+        death_day: isDeceased && deathDay !== "" ? Number(deathDay) : null,
         is_deceased: isDeceased,
         is_in_law: isInLaw,
+        is_notable: isNotable,
         birth_order: birthOrder === "" ? null : Number(birthOrder),
-        generation: generation === "" ? null : Number(generation),
+
+        // 👉 Thêm 2 dòng này
+        generation: generation,
+        branch_id: branchId,
+
         other_names: otherNames || null,
         avatar_url: finalAvatarUrl || null,
         note: note || null,
@@ -492,6 +356,42 @@ export default function MemberForm({
             </label>
           </div>
 
+          <div className="flex items-center sm:mt-4 mt-2">
+            <label className="flex items-center gap-3 group">
+              <div className="relative flex items-center">
+                <input
+                  type="checkbox"
+                  checked={isNotable}
+                  onChange={(e) => setIsNotable(e.target.checked)}
+                  className="peer sr-only"
+                />
+                <div className="size-5 border-2 border-stone-300 rounded peer-checked:bg-amber-500 peer-checked:border-amber-500 transition-colors flex items-center justify-center">
+                  <motion.svg
+                    initial={false}
+                    animate={{
+                      opacity: isNotable ? 1 : 0,
+                      scale: isNotable ? 1 : 0.5,
+                    }}
+                    className="size-3 text-white pointer-events-none"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={4}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </motion.svg>
+                </div>
+              </div>
+              <span className="text-sm font-semibold text-stone-700 group-hover:text-amber-700 transition-colors">
+                Danh nhân
+              </span>
+            </label>
+          </div>
+
           <div>
             <label className="block text-sm font-semibold text-stone-700 mb-1.5">
               Thứ tự sinh trong gia đình
@@ -507,18 +407,24 @@ export default function MemberForm({
               className={inputClasses}
             />
             <p className="mt-1.5 text-xs text-stone-400 flex items-center gap-1">
-              <span>💡</span> Để trống nếu không rõ
+              <span>💡</span> Để trống nếu không rõ hoặc không có anh/chị/em
             </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-semibold text-stone-700 whitespace-nowrap">
+              Thuộc chi / nhánh
+            </label>
+
+            <BranchSelect value={branchId} onChange={setBranchId} />
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-stone-700 mb-1.5">
-              Thuộc đời thứ
+              Đời thứ
             </label>
             <input
               type="number"
               min="1"
-              placeholder="Ví dụ: 1, 2, 3..."
               value={generation}
               onChange={(e) =>
                 setGeneration(e.target.value ? Number(e.target.value) : "")
@@ -526,7 +432,7 @@ export default function MemberForm({
               className={inputClasses}
             />
             <p className="mt-1.5 text-xs text-stone-400 flex items-center gap-1">
-              <span>💡</span> Để trống nếu không rõ
+              <span>💡</span> Ví dụ: 1 là đời thủy tổ, 2 là con của thủy tổ...
             </p>
           </div>
 
@@ -680,9 +586,6 @@ export default function MemberForm({
                         setDeathYear("");
                         setDeathMonth("");
                         setDeathDay("");
-                        setDeathLunarYear("");
-                        setDeathLunarMonth("");
-                        setDeathLunarDay("");
                       }
                     }}
                     className="peer sr-only"
@@ -709,7 +612,7 @@ export default function MemberForm({
                   </div>
                 </div>
                 <span className="text-sm font-semibold text-stone-700 group-hover:text-stone-900 transition-colors">
-                  Đã mất
+                  Đã qua đời
                 </span>
               </label>
             </div>
@@ -722,91 +625,47 @@ export default function MemberForm({
                   exit={{ opacity: 0, height: 0, marginTop: 0 }}
                   className="overflow-hidden"
                 >
-                  <p className="text-[13px] text-stone-500 mb-4 italic">
-                    * Nhập Ngày Dương lịch hoặc Ngày Âm lịch. Hệ thống sẽ tự
-                    động tính toán và điền phần còn lại.
-                  </p>
-
-                  <div className="flex flex-col gap-5">
-                    {/* Lunar Date */}
-                    <div>
-                      <label className="block text-sm font-semibold text-stone-700 mb-2">
-                        Ngày mất (Âm lịch)
-                      </label>
-                      <div className="grid grid-cols-3 gap-3">
-                        <input
-                          type="number"
-                          placeholder="Ngày"
-                          min="1"
-                          max="31"
-                          value={deathLunarDay}
-                          onChange={(e) =>
-                            handleLunarDeathChange("day", e.target.value)
-                          }
-                          className={inputClasses}
-                        />
-                        <input
-                          type="number"
-                          placeholder="Tháng"
-                          min="1"
-                          max="12"
-                          value={deathLunarMonth}
-                          onChange={(e) =>
-                            handleLunarDeathChange("month", e.target.value)
-                          }
-                          className={inputClasses}
-                        />
-                        <input
-                          type="number"
-                          placeholder="Năm"
-                          value={deathLunarYear}
-                          onChange={(e) =>
-                            handleLunarDeathChange("year", e.target.value)
-                          }
-                          className={inputClasses}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Solar Date */}
-                    <div>
-                      <label className="block text-sm font-semibold text-stone-700 mb-2">
-                        Ngày mất (Dương lịch)
-                      </label>
-                      <div className="grid grid-cols-3 gap-3">
-                        <input
-                          type="number"
-                          placeholder="Ngày"
-                          min="1"
-                          max="31"
-                          value={deathDay}
-                          onChange={(e) =>
-                            handleSolarDeathChange("day", e.target.value)
-                          }
-                          className={inputClasses}
-                        />
-                        <input
-                          type="number"
-                          placeholder="Tháng"
-                          min="1"
-                          max="12"
-                          value={deathMonth}
-                          onChange={(e) =>
-                            handleSolarDeathChange("month", e.target.value)
-                          }
-                          className={inputClasses}
-                        />
-                        <input
-                          type="number"
-                          placeholder="Năm"
-                          value={deathYear}
-                          onChange={(e) =>
-                            handleSolarDeathChange("year", e.target.value)
-                          }
-                          className={inputClasses}
-                        />
-                      </div>
-                    </div>
+                  <label className="block text-sm font-semibold text-stone-700 mb-1.5">
+                    Ngày mất
+                  </label>
+                  <div className="grid grid-cols-3 gap-3 pt-1">
+                    <input
+                      type="number"
+                      placeholder="Ngày"
+                      min="1"
+                      max="31"
+                      value={deathDay}
+                      onChange={(e) =>
+                        setDeathDay(
+                          e.target.value ? Number(e.target.value) : "",
+                        )
+                      }
+                      className={inputClasses}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Tháng"
+                      min="1"
+                      max="12"
+                      value={deathMonth}
+                      onChange={(e) =>
+                        setDeathMonth(
+                          e.target.value ? Number(e.target.value) : "",
+                        )
+                      }
+                      className={inputClasses}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Năm"
+                      value={deathYear}
+                      onChange={(e) =>
+                        setDeathYear(
+                          e.target.value ? Number(e.target.value) : "",
+                        )
+                      }
+                      className={inputClasses}
+                    />
                   </div>
                 </motion.div>
               )}
@@ -918,23 +777,42 @@ export default function MemberForm({
         initial="hidden"
         animate="show"
         transition={{ delay: 0.2 }}
-        className="flex justify-end gap-3 sm:gap-4 pt-6"
+        className="flex justify-between items-center gap-3 sm:gap-4 pt-6"
       >
+        {/* Date Converter Tool Button */}
         <button
           type="button"
-          onClick={() => (onCancel ? onCancel() : router.back())}
-          className="btn"
+          onClick={() =>
+            window.open(
+              "/date-converter",
+              "_blank",
+              "width=800,height=600,scrollbars=yes,resizable=yes",
+            )
+          }
+          className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors border border-gray-300"
+          title="Mở công cụ chuyển đổi ngày âm dương"
         >
-          Hủy bỏ
+          <Calendar className="size-4" />
+          <span className="hidden sm:inline">Công cụ chuyển ngày</span>
         </button>
-        <button type="submit" disabled={loading} className="btn-primary">
-          {loading && <Loader2 className="size-4 animate-spin" />}
-          {loading
-            ? "Đang lưu..."
-            : isEditing
-              ? "Lưu thay đổi"
-              : "Thêm thành viên"}
-        </button>
+
+        <div className="flex gap-3 sm:gap-4">
+          <button
+            type="button"
+            onClick={() => (onCancel ? onCancel() : router.back())}
+            className="btn"
+          >
+            Hủy bỏ
+          </button>
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading && <Loader2 className="size-4 animate-spin" />}
+            {loading
+              ? "Đang lưu..."
+              : isEditing
+                ? "Lưu thay đổi"
+                : "Thêm thành viên"}
+          </button>
+        </div>
       </motion.div>
     </form>
   );
