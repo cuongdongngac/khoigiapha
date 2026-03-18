@@ -5,36 +5,25 @@ import { cookies } from "next/headers";
 
 export async function POST() {
   try {
-    // Use service role client to bypass RLS for config access
-    const serviceSupabase = createServiceRoleClient();
+    // Use environment variables directly for guest credentials
+    const guestEmail = process.env.NEXT_PUBLIC_GUEST_EMAIL || "guest@giapha.com";
+    const guestPassword = process.env.NEXT_PUBLIC_GUEST_PASS || "giapha@123";
 
-    // Get guest credentials from database config table
-    const { data: configData, error: configError } = await serviceSupabase
-      .from("config")
-      .select("guestemail, guestpass")
-      .limit(1)
-      .single();
-
-    if (configError || !configData) {
-      console.error("Failed to get config from database:", configError);
-      return NextResponse.json(
-        { error: "Không thể lấy cấu hình từ database" },
-        { status: 500 }
-      );
-    }
+    console.log("Attempting guest login with email:", guestEmail);
 
     // Create client with cookies for authentication
     const cookieStore = await cookies();
     const authSupabase = createClient(cookieStore);
 
-    // Login as guest using database credentials
+    // Login as guest using environment variables
     const { data, error } = await authSupabase.auth.signInWithPassword({
-      email: configData.guestemail || "guest@giapha.com",
-      password: configData.guestpass || "giapha@123",
+      email: guestEmail,
+      password: guestPassword,
     });
 
     if (error) {
       console.error("Guest login failed:", error);
+      console.error("Used credentials:", { email: guestEmail, password: "***" });
       return NextResponse.json(
         { error: "Không thể đăng nhập với tài khoản guest" },
         { status: 400 }

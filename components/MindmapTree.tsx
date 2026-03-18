@@ -524,7 +524,7 @@ export default function MindmapTree({
             </div>
 
             {/* Export Button */}
-            {canEdit && <ExportButton persons={[]} relationships={[]} />}
+            {canEdit && <ExportButton />}
           </div>,
           portalNode,
         )}

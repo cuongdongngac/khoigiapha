@@ -346,7 +346,7 @@ export default function FamilyTree({
             </div>
 
             {/* Export Button */}
-            {canEdit && <ExportButton persons={[]} relationships={[]} />}
+            {canEdit && <ExportButton />}
           </div>,
           portalNode,
         )}

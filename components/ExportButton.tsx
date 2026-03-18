@@ -13,15 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-interface ExportButtonProps {
-  persons?: any[];
-  relationships?: any[];
-}
-
-export default function ExportButton({
-  persons = [],
-  relationships = [],
-}: ExportButtonProps) {
+export default function ExportButton() {
   const [isExporting, setIsExporting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [error, setError] = useState<string | null>(null);
