@@ -10,10 +10,10 @@ import {
   Info,
   KeyRound,
   Network,
-  Search,
   UserCircle,
   Users,
   FileText,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -110,6 +110,14 @@ export default function HeaderMenu({ isAdmin, userEmail }: HeaderMenuProps) {
                     <Database className="size-4" />
                     Sao lưu & Phục hồi
                   </Link>
+                  <Link
+                    href="/dashboard/config"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                  >
+                    <Settings className="size-4" />
+                    Cấu hình trang web
+                  </Link>
                 </>
               )}
               <Link
@@ -148,14 +156,6 @@ export default function HeaderMenu({ isAdmin, userEmail }: HeaderMenuProps) {
                 <KeyRound className="size-4" />
                 Đổi mật khẩu
               </button>
-              <Link
-                href="/dashboard/lineage-search"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors w-full text-left"
-              >
-                <Search className="size-4" />
-                Truy Nguồn Gốc
-              </Link>
               <Link
                 href="/about"
                 onClick={() => setIsOpen(false)}

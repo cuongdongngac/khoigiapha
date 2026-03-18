@@ -524,10 +524,7 @@ export default function MindmapTree({
             </div>
 
             {/* Export Button */}
-            <ExportButton
-              persons={Array.from(personsMap.values())}
-              relationships={relationships}
-            />
+            {canEdit && <ExportButton persons={[]} relationships={[]} />}
           </div>,
           portalNode,
         )}

@@ -8,7 +8,6 @@ import MindmapTree from "@/components/MindmapTree";
 import RootSelector from "@/components/RootSelector";
 import BranchesTable from "@/components/BranchesTable";
 import Introduction from "@/components/Introduction";
-import AudioPlayer from "@/components/AudioPlayer";
 import NotablesList from "@/components/NotablesList";
 import { Person, Relationship } from "@/types";
 import { useMemo } from "react";
@@ -105,12 +104,6 @@ export default function DashboardViews({
         {currentView === "introduction" && (
           <div className="relative">
             <Introduction />
-            <div className="fixed left-4 bottom-6 z-50">
-              <AudioPlayer
-                title="Giới thiệu làng Kẻ Vẽ"
-                src="https://mediaserver.huph.edu.vn/vod/nas1videos/phahe/gioithieudongngac.mp3"
-              />
-            </div>
           </div>
         )}
 

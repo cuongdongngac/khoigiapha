@@ -74,3 +74,11 @@ export interface BranchOption {
   id: number
   name: string
 }
+
+export interface SiteConfig {
+  id: number;
+  introduction: string | null;
+  guestemail: string | null;
+  guestpass: string | null;
+  created_at: string;
+}

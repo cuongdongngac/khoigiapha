@@ -84,9 +84,6 @@ export default function RelationshipManager({
   const [currentPersonGeneration, setCurrentPersonGeneration] = useState<
     number | null
   >(null);
-  const [currentPersonBranchId, setCurrentPersonBranchId] = useState<
-    number | null
-  >(null);
 
   // Get appropriate note to display based on relationship type and gender
   const getDisplayNote = (rel: EnrichedRelationship): string | null => {
@@ -114,16 +111,15 @@ export default function RelationshipManager({
   // Fetch relationships
   const fetchRelationships = useCallback(async () => {
     try {
-      // Get current person's generation and branch
+      // Get current person's generation
       const { data: currentPerson } = await supabase
         .from("persons")
-        .select("generation, branch_id")
+        .select("generation")
         .eq("id", personId)
         .single();
 
       if (currentPerson) {
         setCurrentPersonGeneration(currentPerson.generation);
-        setCurrentPersonBranchId(currentPerson.branch_id);
       }
 
       // Get all relationships where this person involved
@@ -239,11 +235,10 @@ export default function RelationshipManager({
         return;
       }
 
-      // Search in both full_name and other_names
       const { data } = await supabase
         .from("persons")
         .select("*")
-        .or(`full_name.ilike.%${searchTerm}%,other_names.ilike.%${searchTerm}%`)
+        .ilike("full_name", `%${searchTerm}%`)
         .neq("id", personId) // Exclude self
         .limit(5);
 
@@ -349,14 +344,12 @@ export default function RelationshipManager({
           gender: "male" | "female" | "other";
           birth_year?: number;
           generation?: number;
-          branch_id?: number;
         } = {
           full_name: child.name.trim(),
           gender: child.gender,
           generation: currentPersonGeneration
             ? currentPersonGeneration + 1
             : undefined,
-          branch_id: currentPersonBranchId || undefined,
         };
         if (child.birthYear.trim() !== "") {
           const year = parseInt(child.birthYear);
@@ -924,6 +917,15 @@ export default function RelationshipManager({
                       setBulkChildren(newBulk);
                     }}
                     className="flex-1 bg-white text-stone-900 placeholder-stone-400 text-sm rounded-md border-stone-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 p-2 border w-24"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Thế hệ"
+                    value={
+                      child.birthYear ? (currentPersonGeneration || 0) + 1 : ""
+                    }
+                    readOnly
+                    className="flex-1 bg-stone-100 text-stone-600 text-sm rounded-md border-stone-300 p-2 border w-20"
                   />
                   <button
                     onClick={() => {

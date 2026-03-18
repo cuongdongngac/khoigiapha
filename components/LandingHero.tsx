@@ -47,7 +47,7 @@ export default function LandingHero({ siteName }: LandingHeroProps) {
           <motion.div whileHover={{ scale: 1.05 }} className="mb-8">
             <img
               src="/assets/images/banner.jpg"
-              alt="GIA PHẢ HỌ PHẠM ĐÔNG NGẠC"
+              alt="GIA PHẢ HỌ NGUYỄN BỈM SƠN"
               className="w-full max-w-4xl h-auto rounded-2xl shadow-2xl border-4 border-amber-200"
             />
           </motion.div>

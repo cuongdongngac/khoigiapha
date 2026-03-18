@@ -166,7 +166,7 @@ export const MindmapNode = memo(
                         <span className="truncate">
                           {data.person.birth_year || "Chưa rõ"}
                           {data.person.is_deceased &&
-                            ` → ${data.person.death_lunar_year || data.person.death_year || "Chưa rõ"}`}
+                            ` → ${data.person.death_year || "Chưa rõ"}`}
                         </span>
                       </span>
                       {(data.person.is_deceased || data.person.is_in_law) && (

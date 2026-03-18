@@ -20,7 +20,7 @@ export default function DashboardHeader({
         <Link href="/dashboard" className="group block">
           <img
             src="/assets/images/banerds.jpg"
-            alt="GIA PHẢ HỌ PHẠM ĐÔNG NGẠC"
+            alt="GIA PHẢ HỌ NGUYỄN BỈM SƠN"
             className="w-full h-24 object-contain"
           />
         </Link>

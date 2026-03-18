@@ -7,12 +7,9 @@ interface Props {
   branchId: number | null;
 }
 
-// Module-level cache to share across all instances of BranchName
-let branchesCache: Record<number, string> | null = null;
-let fetchPromise: Promise<Record<number, string>> | null = null;
-
 export default function BranchName({ branchId }: Props) {
   const [name, setName] = useState<string | null>(null);
+  const supabase = createClient();
 
   useEffect(() => {
     if (!branchId) {
@@ -22,40 +19,19 @@ export default function BranchName({ branchId }: Props) {
 
     let isMounted = true;
 
-    const getBranchName = async () => {
-      // 1. If we already have the data locally, use it immediately
-      if (branchesCache) {
-        if (isMounted) setName(branchesCache[branchId] ?? null);
-        return;
-      }
+    const fetchBranch = async () => {
+      const { data, error } = await supabase
+        .from("branches")
+        .select("name")
+        .eq("id", branchId)
+        .single();
 
-      // 2. If no one is fetching yet, start the fetch for ALL branches
-      if (!fetchPromise) {
-        fetchPromise = (async () => {
-          const supabase = createClient();
-          const { data, error } = await supabase
-            .from("branches")
-            .select("id, name");
-          
-          const map: Record<number, string> = {};
-          if (!error && data) {
-            data.forEach((b) => {
-              map[b.id] = b.name;
-            });
-            branchesCache = map; // Save for subsequent renders
-          }
-          return map;
-        })();
-      }
-
-      // 3. Wait for the fetch (whether started by this component or another)
-      const map = await fetchPromise;
-      if (isMounted && map) {
-        setName(map[branchId] ?? null);
+      if (!error && isMounted) {
+        setName(data?.name ?? null);
       }
     };
 
-    getBranchName();
+    fetchBranch();
 
     return () => {
       isMounted = false;
