@@ -31,6 +31,9 @@ export default function FamilyNodeCard({
 
   const isDeceased = person.is_deceased;
 
+  // Calculate generation offset for visual positioning
+  const generationOffset = person.generation ? (person.generation - 1) * 15 : 0; // 15px per generation
+
   const content = (
     <div
       onClick={onClickCard}
@@ -39,12 +42,18 @@ export default function FamilyNodeCard({
       `}
     >
       {isRingVisible && (
-        <div className="absolute top-[15%] -left-2.5 sm:-left-4 size-5 sm:size-6 rounded-full shadow-sm bg-white z-100 flex items-center justify-center text-[10px] sm:text-sm">
+        <div
+          className="absolute top-[15%] -left-2.5 sm:-left-4 size-5 sm:size-6 rounded-full shadow-sm bg-white z-100 flex items-center justify-center text-[10px] sm:text-sm"
+          style={{ marginTop: `${generationOffset}px` }}
+        >
           <span className="leading-none pt-px pl-0.5">💍</span>
         </div>
       )}
       {isPlusVisible && (
-        <div className="absolute top-[15%] -left-2.5 sm:-left-4 size-5 sm:size-6 rounded-full shadow-sm bg-white z-100 flex items-center justify-center text-[10px] sm:text-sm font-medium text-stone-500">
+        <div
+          className="absolute top-[15%] -left-2.5 sm:-left-4 size-5 sm:size-6 rounded-full shadow-sm bg-white z-100 flex items-center justify-center text-[10px] sm:text-sm font-medium text-stone-500"
+          style={{ marginTop: `${generationOffset}px` }}
+        >
           <span className="leading-none mb-px pl-0.5">+</span>
         </div>
       )}

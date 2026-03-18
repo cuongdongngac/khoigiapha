@@ -21,7 +21,7 @@ export default function DashboardHeader({
           <img
             src="/assets/images/banerds.jpg"
             alt="GIA PHẢ HỌ NGUYỄN BỈM SƠN"
-            className="w-full h-24 object-contain"
+            className="w-full h-32 md:h-36 object-contain"
           />
         </Link>
         <div className="flex items-center justify-between py-2">

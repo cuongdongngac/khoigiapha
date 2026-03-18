@@ -8,6 +8,7 @@ import {
   ChevronRight,
   ChevronsDownUp,
   ChevronsUpDown,
+  Code,
   Filter,
   Image as ImageIcon,
   Share2,
@@ -18,11 +19,13 @@ import { createPortal } from "react-dom";
 import { useDashboard } from "./DashboardContext";
 import DefaultAvatar from "./DefaultAvatar";
 import ExportButton from "./ExportButton";
+import { generateSimpleFamilyTreeHTML } from "@/utils/familyTreeUtils";
 
 interface MindmapTreeProps {
   personsMap: Map<string, Person>;
   relationships: Relationship[];
   roots: Person[];
+  branches: any[];
   canEdit?: boolean;
 }
 
@@ -340,6 +343,7 @@ export default function MindmapTree({
   personsMap,
   relationships,
   roots,
+  branches,
   canEdit,
 }: MindmapTreeProps) {
   const { showAvatar, setShowAvatar, setMemberModalId } = useDashboard();
@@ -352,6 +356,7 @@ export default function MindmapTree({
     type: "expand" | "collapse";
     ts: number;
   } | null>(null);
+  const [isExportingHTML, setIsExportingHTML] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -399,6 +404,61 @@ export default function MindmapTree({
       setMemberModalId,
     ],
   );
+
+  const exportSimpleHTML = async () => {
+    try {
+      setIsExportingHTML(true);
+
+      // Build tree data from current view
+      const treeData = roots
+        .map((root) => {
+          const buildNode = (
+            personId: string,
+            visited: Set<string> = new Set(),
+            level: number = 0,
+          ): any => {
+            if (visited.has(personId)) return null;
+            visited.add(personId);
+
+            const data = getTreeData(personId, ctx);
+            if (!data.person) return null;
+
+            const children = data.children
+              .map((child: Person) =>
+                buildNode(child.id, new Set(visited), level + 1),
+              )
+              .filter(Boolean);
+
+            return {
+              person: data.person,
+              children,
+              level,
+            };
+          };
+
+          return buildNode(root.id);
+        })
+        .filter(Boolean);
+
+      // Generate HTML
+      const htmlContent = generateSimpleFamilyTreeHTML(treeData, branches);
+
+      // Download
+      const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `giapha-mindmap-${new Date().toISOString().split("T")[0]}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export HTML error:", err);
+    } finally {
+      setIsExportingHTML(false);
+    }
+  };
 
   if (roots.length === 0) {
     return (
@@ -522,14 +582,42 @@ export default function MindmapTree({
                 )}
               </AnimatePresence>
             </div>
-
             {/* Export Button */}
-            {canEdit && <ExportButton />}
+            <ExportButton
+              treeData={roots
+                .map((root) => {
+                  const buildNode = (
+                    personId: string,
+                    visited: Set<string> = new Set(),
+                    level: number = 0,
+                  ): any => {
+                    if (visited.has(personId)) return null;
+                    visited.add(personId);
+
+                    const data = getTreeData(personId, ctx);
+                    if (!data.person) return null;
+
+                    const children = data.children
+                      .map((child: Person) =>
+                        buildNode(child.id, new Set(visited), level + 1),
+                      )
+                      .filter(Boolean);
+
+                    return {
+                      person: data.person,
+                      children,
+                      level,
+                    };
+                  };
+
+                  return buildNode(root.id);
+                })
+                .filter(Boolean)}
+              branches={branches}
+            />
           </div>,
           portalNode,
         )}
-
-      {/* Root Container */}
       <div
         id="export-container"
         className="font-sans min-w-max pb-20 p-10 px-0 sm:px-8"

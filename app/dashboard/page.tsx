@@ -42,6 +42,7 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
 
   let personsData = [];
   let relationships = [];
+  let branches = [];
 
   // Always fetch all persons for search/filter to work properly
   const { data: allPersons } = await supabase
@@ -50,9 +51,11 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
     .order("birth_year", { ascending: true, nullsFirst: false });
 
   const { data: relsData } = await supabase.from("relationships").select("*");
+  const { data: branchesData } = await supabase.from("branches").select("*");
 
   personsData = allPersons || [];
   relationships = relsData || [];
+  branches = branchesData || [];
 
   const persons = personsData;
 
@@ -87,6 +90,7 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
         <DashboardViews
           persons={persons}
           relationships={relationships}
+          branches={branches}
           canEdit={canEdit}
         />
 

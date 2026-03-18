@@ -15,12 +15,14 @@ import { useMemo } from "react";
 interface DashboardViewsProps {
   persons: Person[];
   relationships: Relationship[];
+  branches: any[];
   canEdit?: boolean;
 }
 
 export default function DashboardViews({
   persons,
   relationships,
+  branches,
   canEdit = false,
 }: DashboardViewsProps) {
   const { view: currentView, rootId } = useDashboard();
@@ -114,6 +116,7 @@ export default function DashboardViews({
             <FamilyTree
               personsMap={personsMap}
               relationships={relationships}
+              branches={branches}
               roots={roots}
               canEdit={canEdit}
             />
@@ -122,6 +125,7 @@ export default function DashboardViews({
             <MindmapTree
               personsMap={personsMap}
               relationships={relationships}
+              branches={branches}
               roots={roots}
               canEdit={canEdit}
             />

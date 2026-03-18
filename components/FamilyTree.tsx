@@ -5,10 +5,17 @@ import { createPortal } from "react-dom";
 
 import { Person, Relationship } from "@/types";
 import { AnimatePresence, motion } from "framer-motion";
-import { Filter, Image as ImageIcon, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  Code,
+  Filter,
+  Image as ImageIcon,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import { useDashboard } from "./DashboardContext";
 import ExportButton from "./ExportButton";
 import FamilyNodeCard from "./FamilyNodeCard";
+import { generateSimpleFamilyTreeHTML } from "@/utils/familyTreeUtils";
 
 interface SpouseData {
   person: Person;
@@ -19,11 +26,13 @@ export default function FamilyTree({
   personsMap,
   relationships,
   roots,
+  branches,
   canEdit,
 }: {
   personsMap: Map<string, Person>;
   relationships: Relationship[];
   roots: Person[];
+  branches: any[];
   canEdit?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -41,6 +50,7 @@ export default function FamilyTree({
   const { showAvatar, setShowAvatar } = useDashboard();
   const filtersRef = useRef<HTMLDivElement>(null);
   const [portalNode, setPortalNode] = useState<HTMLElement | null>(null);
+  const [isExportingHTML, setIsExportingHTML] = useState(false);
 
   useEffect(() => {
     setPortalNode(document.getElementById("tree-toolbar-portal"));
@@ -59,6 +69,61 @@ export default function FamilyTree({
   const handleZoomIn = () => setScale((s) => Math.min(s + 0.1, 2));
   const handleZoomOut = () => setScale((s) => Math.max(s - 0.1, 0.3));
   const handleResetZoom = () => setScale(1);
+
+  const exportSimpleHTML = async () => {
+    try {
+      setIsExportingHTML(true);
+
+      // Build tree data from current view
+      const treeData = roots
+        .map((root) => {
+          const buildNode = (
+            personId: string,
+            visited: Set<string> = new Set(),
+            level: number = 0,
+          ): any => {
+            if (visited.has(personId)) return null;
+            visited.add(personId);
+
+            const data = getTreeData(personId);
+            if (!data.person) return null;
+
+            const children = data.children
+              .map((child: Person) =>
+                buildNode(child.id, new Set(visited), level + 1),
+              )
+              .filter(Boolean);
+
+            return {
+              person: data.person,
+              children,
+              level,
+            };
+          };
+
+          return buildNode(root.id);
+        })
+        .filter(Boolean);
+
+      // Generate HTML
+      const htmlContent = generateSimpleFamilyTreeHTML(treeData, branches);
+
+      // Download
+      const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `giapha-tree-${new Date().toISOString().split("T")[0]}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export HTML error:", err);
+    } finally {
+      setIsExportingHTML(false);
+    }
+  };
 
   useEffect(() => {
     // Center the scroll area horizontally on initial render
@@ -346,7 +411,38 @@ export default function FamilyTree({
             </div>
 
             {/* Export Button */}
-            {canEdit && <ExportButton />}
+            <ExportButton
+              treeData={roots
+                .map((root) => {
+                  const buildNode = (
+                    personId: string,
+                    visited: Set<string> = new Set(),
+                    level: number = 0,
+                  ): any => {
+                    if (visited.has(personId)) return null;
+                    visited.add(personId);
+
+                    const data = getTreeData(personId);
+                    if (!data.person) return null;
+
+                    const children = data.children
+                      .map((child: Person) =>
+                        buildNode(child.id, new Set(visited), level + 1),
+                      )
+                      .filter(Boolean);
+
+                    return {
+                      person: data.person,
+                      children,
+                      level,
+                    };
+                  };
+
+                  return buildNode(root.id);
+                })
+                .filter(Boolean)}
+              branches={branches}
+            />
           </div>,
           portalNode,
         )}

@@ -180,7 +180,7 @@ export default function BaseToolbar({
       </div>
 
       {/* Export Button */}
-      {canEdit && <ExportButton />}
+      <ExportButton />
     </div>,
     portalNode,
   );
