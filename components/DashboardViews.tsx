@@ -73,7 +73,10 @@ export default function DashboardViews({
           persons.length > 0 &&
           activeRootId && (
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2 w-full flex flex-col sm:flex-row flex-wrap items-center sm:justify-between gap-4 relative z-20">
-              <RootSelector persons={persons} currentRootId={activeRootId} />
+              <div className="flex items-center gap-3 sm:gap-4 flex-wrap w-full sm:w-auto justify-center sm:justify-start">
+                <RootSelector persons={persons} currentRootId={activeRootId} />
+                <div id="tree-depth-portal" />
+              </div>
               <div
                 id="tree-toolbar-portal"
                 className="flex items-center gap-2 flex-wrap justify-center"

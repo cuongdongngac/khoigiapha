@@ -46,14 +46,17 @@ export default function FamilyTree({
   const [hideSpouses, setHideSpouses] = useState(false);
   const [hideMales, setHideMales] = useState(false);
   const [hideFemales, setHideFemales] = useState(false);
+  const [maxDepth, setMaxDepth] = useState<number>(0);
 
   const { showAvatar, setShowAvatar } = useDashboard();
   const filtersRef = useRef<HTMLDivElement>(null);
   const [portalNode, setPortalNode] = useState<HTMLElement | null>(null);
+  const [depthPortalNode, setDepthPortalNode] = useState<HTMLElement | null>(null);
   const [isExportingHTML, setIsExportingHTML] = useState(false);
 
   useEffect(() => {
     setPortalNode(document.getElementById("tree-toolbar-portal"));
+    setDepthPortalNode(document.getElementById("tree-depth-portal"));
     const handleClickOutside = (event: MouseEvent) => {
       if (
         filtersRef.current &&
@@ -88,14 +91,18 @@ export default function FamilyTree({
             const data = getTreeData(personId);
             if (!data.person) return null;
 
-            const children = data.children
-              .map((child: Person) =>
-                buildNode(child.id, new Set(visited), level + 1),
-              )
-              .filter(Boolean);
+            const shouldIncludeChildren = maxDepth === 0 || level < maxDepth - 1;
+            const children = shouldIncludeChildren
+              ? data.children
+                  .map((child: Person) =>
+                    buildNode(child.id, new Set(visited), level + 1),
+                  )
+                  .filter(Boolean)
+              : [];
 
             return {
               person: data.person,
+              spouses: data.spouses.map((s) => s.person),
               children,
               level,
             };
@@ -243,12 +250,15 @@ export default function FamilyTree({
   const renderTreeNode = (
     personId: string,
     visited: Set<string> = new Set(),
+    level: number = 0,
   ): React.ReactNode => {
     if (visited.has(personId)) return null; // cycle guard
     visited.add(personId);
 
     const data = getTreeData(personId);
     if (!data.person) return null;
+
+    const hasChildren = (maxDepth > 0 && level >= maxDepth - 1) ? false : data.children.length > 0;
 
     return (
       <li>
@@ -281,11 +291,11 @@ export default function FamilyTree({
         </div>
 
         {/* Render Children (if any) */}
-        {data.children.length > 0 && (
+        {hasChildren && (
           <ul>
             {data.children.map((child) => (
               <React.Fragment key={child.id}>
-                {renderTreeNode(child.id, new Set(visited))}
+                {renderTreeNode(child.id, new Set(visited), level + 1)}
               </React.Fragment>
             ))}
           </ul>
@@ -303,6 +313,25 @@ export default function FamilyTree({
 
   return (
     <div className="w-full h-full relative">
+      {/* Depth Control Portal */}
+      {depthPortalNode &&
+        createPortal(
+          <div className="flex items-center gap-2 bg-white/80 backdrop-blur-md shadow-sm border border-stone-200/60 rounded-full px-3 h-10 transition-opacity">
+            <span className="text-sm font-semibold text-stone-600 hidden sm:inline">Độ sâu:</span>
+            <input
+              type="number"
+              min="0"
+              max="20"
+              value={maxDepth === 0 ? "" : maxDepth}
+              onChange={(e) => setMaxDepth(e.target.value ? parseInt(e.target.value) : 0)}
+              className="w-10 bg-transparent text-sm font-medium text-amber-700 focus:outline-none text-center"
+              placeholder="∞"
+              title="Giới hạn đời (để trống = Không giới hạn)"
+            />
+          </div>,
+          depthPortalNode
+        )}
+
       {/* Grouped Toolbar (Zoom, Filters, Export) Portaled to Header */}
       {portalNode &&
         createPortal(
@@ -425,14 +454,18 @@ export default function FamilyTree({
                     const data = getTreeData(personId);
                     if (!data.person) return null;
 
-                    const children = data.children
-                      .map((child: Person) =>
-                        buildNode(child.id, new Set(visited), level + 1),
-                      )
-                      .filter(Boolean);
+                    const shouldIncludeChildren = maxDepth === 0 || level < maxDepth - 1;
+                    const children = shouldIncludeChildren
+                      ? data.children
+                          .map((child: Person) =>
+                            buildNode(child.id, new Set(visited), level + 1),
+                          )
+                          .filter(Boolean)
+                      : [];
 
                     return {
                       person: data.person,
+                      spouses: data.spouses.map((s) => s.person),
                       children,
                       level,
                     };

@@ -109,6 +109,7 @@ export function generateSimpleFamilyTreeHTML(tree: TreeNode[], branches: any[] =
           ${person.birth_year ? `<p>Sinh năm: ${person.birth_year}</p>` : ''}
           ${person.gender ? `<p>Giới tính: ${person.gender === 'male' ? 'Nam' : 'Nữ'}</p>` : ''}
           ${person.other_names ? `<p>Tên khác: ${person.other_names}</p>` : ''}
+          ${node.spouses && node.spouses.length > 0 ? `<p class="spouse-info"><strong>Vợ/chồng:</strong> ${node.spouses.map(s => s.full_name).join(', ')}</p>` : ''}
         </div>
         </div>
         ${node.children && node.children.length > 0 ? `

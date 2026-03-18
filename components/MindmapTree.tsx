@@ -35,6 +35,7 @@ interface MindmapContextData {
   hideSpouses: boolean;
   hideMales: boolean;
   hideFemales: boolean;
+  maxDepth: number;
   showAvatar: boolean;
   expandSignal: { type: "expand" | "collapse"; ts: number } | null;
   setMemberModalId: (id: string | null) => void;
@@ -109,7 +110,7 @@ const MindmapNode = memo(
 
     if (!data.person) return null;
 
-    const hasChildren = data.children.length > 0;
+    const hasChildren = (ctx.maxDepth > 0 && level >= ctx.maxDepth - 1) ? false : data.children.length > 0;
 
     return (
       <div className={`relative py-1.5 ${level > 0 ? "pl-6" : "pl-0"}`}>
@@ -348,10 +349,12 @@ export default function MindmapTree({
 }: MindmapTreeProps) {
   const { showAvatar, setShowAvatar, setMemberModalId } = useDashboard();
   const [portalNode, setPortalNode] = useState<HTMLElement | null>(null);
+  const [depthPortalNode, setDepthPortalNode] = useState<HTMLElement | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [hideSpouses, setHideSpouses] = useState(false);
   const [hideMales, setHideMales] = useState(false);
   const [hideFemales, setHideFemales] = useState(false);
+  const [maxDepth, setMaxDepth] = useState<number>(0);
   const [expandSignal, setExpandSignal] = useState<{
     type: "expand" | "collapse";
     ts: number;
@@ -364,6 +367,10 @@ export default function MindmapTree({
       const node = document.getElementById("tree-toolbar-portal");
       if (node) {
         setPortalNode(node);
+      }
+      const depthNode = document.getElementById("tree-depth-portal");
+      if (depthNode) {
+        setDepthPortalNode(depthNode);
       }
     }, 0);
 
@@ -389,6 +396,7 @@ export default function MindmapTree({
       hideSpouses,
       hideMales,
       hideFemales,
+      maxDepth,
       showAvatar,
       expandSignal,
       setMemberModalId,
@@ -399,6 +407,7 @@ export default function MindmapTree({
       hideSpouses,
       hideMales,
       hideFemales,
+      maxDepth,
       showAvatar,
       expandSignal,
       setMemberModalId,
@@ -423,14 +432,18 @@ export default function MindmapTree({
             const data = getTreeData(personId, ctx);
             if (!data.person) return null;
 
-            const children = data.children
-              .map((child: Person) =>
-                buildNode(child.id, new Set(visited), level + 1),
-              )
-              .filter(Boolean);
+            const shouldIncludeChildren = ctx.maxDepth === 0 || level < ctx.maxDepth - 1;
+            const children = shouldIncludeChildren
+              ? data.children
+                  .map((child: Person) =>
+                    buildNode(child.id, new Set(visited), level + 1),
+                  )
+                  .filter(Boolean)
+              : [];
 
             return {
               person: data.person,
+              spouses: data.spouses.map((s) => s.person),
               children,
               level,
             };
@@ -475,6 +488,25 @@ export default function MindmapTree({
 
   return (
     <div className="w-full h-full relative p-4 sm:p-6 lg:p-8 min-h-[calc(100vh-140px)] flex justify-start lg:justify-center overflow-x-auto">
+      {/* Depth Control Portal */}
+      {depthPortalNode &&
+        createPortal(
+          <div className="flex items-center gap-2 bg-white/80 backdrop-blur-md shadow-sm border border-stone-200/60 rounded-full px-3 h-10 transition-opacity">
+            <span className="text-sm font-semibold text-stone-600 hidden sm:inline">Độ sâu:</span>
+            <input
+              type="number"
+              min="0"
+              max="20"
+              value={maxDepth === 0 ? "" : maxDepth}
+              onChange={(e) => setMaxDepth(e.target.value ? parseInt(e.target.value) : 0)}
+              className="w-10 bg-transparent text-sm font-medium text-amber-700 focus:outline-none text-center"
+              placeholder="∞"
+              title="Giới hạn đời (để trống = Không giới hạn)"
+            />
+          </div>,
+          depthPortalNode
+        )}
+
       {/* Grouped Toolbar (Expand/Collapse, Filters, Export) Portaled to Header */}
       {portalNode &&
         createPortal(
@@ -597,14 +629,18 @@ export default function MindmapTree({
                     const data = getTreeData(personId, ctx);
                     if (!data.person) return null;
 
-                    const children = data.children
-                      .map((child: Person) =>
-                        buildNode(child.id, new Set(visited), level + 1),
-                      )
-                      .filter(Boolean);
+                    const shouldIncludeChildren = ctx.maxDepth === 0 || level < ctx.maxDepth - 1;
+                    const children = shouldIncludeChildren
+                      ? data.children
+                          .map((child: Person) =>
+                            buildNode(child.id, new Set(visited), level + 1),
+                          )
+                          .filter(Boolean)
+                      : [];
 
                     return {
                       person: data.person,
+                      spouses: data.spouses.map((s) => s.person),
                       children,
                       level,
                     };
