@@ -13,6 +13,10 @@ import {
 import { useDashboard } from "./DashboardContext";
 import { useRouter } from "next/navigation";
 
+// Get rootId from environment variable
+const ROOT_ID =
+  process.env.NEXT_PUBLIC_ROOT_ID || "a4167ee0-df91-4a9c-a7d1-ab4e88ffa4d0";
+
 export type ViewMode =
   | "list"
   | "members_filter"
@@ -23,7 +27,7 @@ export type ViewMode =
   | "notables";
 
 export default function ViewToggle() {
-  const { view: currentView, setView } = useDashboard();
+  const { view: currentView, setView, setRootId } = useDashboard();
   const router = useRouter();
 
   const tabs = [
@@ -61,6 +65,16 @@ export default function ViewToggle() {
           <button
             key={tab.id}
             onClick={() => {
+              // When switching to tree or mindmap, navigate to URL with specific rootId
+              if (tab.id === "tree") {
+                router.push(`/dashboard?view=tree&rootId=${ROOT_ID}`);
+                return;
+              }
+              if (tab.id === "mindmap") {
+                router.push(`/dashboard?view=mindmap&rootId=${ROOT_ID}`);
+                return;
+              }
+              // For other views, use normal setView
               setView(tab.id as ViewMode);
             }}
             className={`relative px-4 sm:px-6 py-1.5 sm:py-2.5 text-sm font-semibold rounded-full transition-colors duration-300 ease-in-out z-10 flex items-center gap-2 ${

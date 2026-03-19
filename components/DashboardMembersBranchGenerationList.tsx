@@ -162,9 +162,9 @@ export default function DashboardMembersBranchGenerationList({
         case "birth_desc":
           return (b.birth_year || 0) - (a.birth_year || 0);
         case "generation_asc":
-          return (a.generation ?? 999) - (b.generation ?? 999);
+          return (a.generation || 0) - (b.generation || 0);
         case "generation_desc":
-          return (b.generation ?? 999) - (a.generation ?? 999);
+          return (b.generation || 0) - (a.generation || 0);
         case "updated_asc":
           return (
             new Date(a.updated_at || 0).getTime() -

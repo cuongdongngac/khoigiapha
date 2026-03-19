@@ -32,10 +32,15 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     setShowAvatar(avatarParam !== "hide");
 
     const viewParam = searchParams.get("view") as ViewMode;
-    if (viewParam && viewParam !== view) setViewState(viewParam);
+    if (viewParam && viewParam !== view) {
+      setViewState(viewParam);
+    }
 
+    // Only update rootId if it's actually different in URL (not just view change)
     const rootIdParam = searchParams.get("rootId");
-    if (rootIdParam !== rootId) setRootIdState(rootIdParam);
+    if (rootIdParam !== rootId) {
+      setRootIdState(rootIdParam);
+    }
 
     // We intentionally ignore memberModalId in the Next.js router loop
     // to avoid Next.js triggering re-renders on push.
