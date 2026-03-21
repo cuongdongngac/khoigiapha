@@ -88,13 +88,17 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
     <DashboardProvider>
       <BranchProvider>
         <PrefixProvider>
-          <ViewToggle />
-          <DashboardViews
-            persons={persons}
-            relationships={relationships}
-            branches={branches}
-            canEdit={canEdit}
-          />
+          <div className="min-h-screen bg-stone-50/50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col">
+              <ViewToggle />
+              <DashboardViews
+                persons={persons}
+                relationships={relationships}
+                branches={branches}
+                canEdit={canEdit}
+              />
+            </div>
+          </div>
 
           <MemberDetailModal />
         </PrefixProvider>
