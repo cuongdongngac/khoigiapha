@@ -1,7 +1,6 @@
 "use client";
 
 import { Person } from "@/types";
-import { ExternalLink, Minus, Plus } from "lucide-react";
 import Image from "next/image";
 import { useDashboard } from "./DashboardContext";
 import { usePrefixes } from "./PrefixContext";
@@ -92,7 +91,12 @@ export default function FamilyNodeCard({
       {showAvatar && (
         <div className="relative z-10 mb-1.5 sm:mb-2">
           <div
-            className={`h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-full flex items-center justify-center text-[10px] sm:text-xs md:text-sm text-white overflow-hidden shrink-0 shadow-lg ring-2 ring-white transition-transform duration-300 group-hover:scale-105
+            onClick={(e) => {
+              e.stopPropagation();
+              setMemberModalId(person.id);
+            }}
+            title="Xem chi tiết thành viên"
+            className={`cursor-pointer h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-full flex items-center justify-center text-[10px] sm:text-xs md:text-sm text-white overflow-hidden shrink-0 shadow-lg ring-2 ring-white transition-transform duration-300 group-hover:scale-105
               ${
                 person.gender === "male"
                   ? "bg-linear-to-br from-sky-400 to-sky-700"
@@ -150,20 +154,6 @@ export default function FamilyNodeCard({
         )} */}
       </div>
 
-      {/* 4. Details Link */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setMemberModalId(person.id);
-        }}
-        className="mt-2 flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors border border-amber-200/50 group/link"
-        title="Xem chi tiết thành viên"
-      >
-        <ExternalLink className="size-2.5 group-hover/link:scale-110 transition-transform" />
-        <span className="text-[9px] font-bold uppercase tracking-tight">
-          Chi tiết
-        </span>
-      </button>
     </div>
   );
 

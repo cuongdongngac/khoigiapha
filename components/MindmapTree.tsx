@@ -188,7 +188,12 @@ const MindmapNode = memo(
                     {ctx.showAvatar && (
                       <div className="relative shrink-0">
                         <div
-                          className={`size-10 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold shadow-md ring-2 ring-white transition-transform duration-300 group-hover/card:scale-105
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            ctx.setMemberModalId(data.person.id);
+                          }}
+                          title="Xem chi tiết thành viên"
+                          className={`cursor-pointer size-10 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold shadow-md ring-2 ring-white transition-transform duration-300 group-hover/card:scale-105
                     ${
                       data.person.gender === "male"
                         ? "bg-linear-to-br from-sky-400 to-sky-700"
@@ -266,18 +271,6 @@ const MindmapNode = memo(
                           )}
                         </div>
                       )}
-                      {/* 4. Details Link */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          ctx.setMemberModalId(data.person.id);
-                        }}
-                        className="mt-2.5 flex items-center gap-1.5 w-max px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors border border-amber-200/50 group/link"
-                        title="Xem chi tiết thành viên"
-                      >
-                        <ExternalLink className="size-3 group-hover/link:scale-110 transition-transform" />
-                        <span className="text-[10px] font-bold uppercase tracking-tight">Chi tiết</span>
-                      </button>
                     </div>
                   </div>
 

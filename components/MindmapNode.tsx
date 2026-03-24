@@ -121,7 +121,12 @@ export const MindmapNode = memo(
                     {ctx.showAvatar && (
                       <div className="relative shrink-0">
                         <div
-                          className={`size-10 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold shadow-md ring-2 ring-white transition-transform duration-300 group-hover/card:scale-105
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            ctx.setMemberModalId(data.person.id);
+                          }}
+                          title="Xem chi tiết thành viên"
+                          className={`cursor-pointer size-10 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold shadow-md ring-2 ring-white transition-transform duration-300 group-hover/card:scale-105
                     ${
                       data.person.gender === "male"
                         ? "bg-linear-to-br from-sky-400 to-sky-700"
