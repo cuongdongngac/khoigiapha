@@ -11,6 +11,8 @@ import {
   Image as ImageIcon,
   ZoomIn,
   ZoomOut,
+  Plus,
+  Minus,
 } from "lucide-react";
 import { useDashboard } from "./DashboardContext";
 import ExportButton from "./ExportButton";
@@ -47,6 +49,7 @@ export default function FamilyTree({
   const [hideMales, setHideMales] = useState(false);
   const [hideFemales, setHideFemales] = useState(false);
   const [maxDepth, setMaxDepth] = useState<number>(0);
+  const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(new Set());
 
   const { showAvatar, setShowAvatar, setRootId } = useDashboard();
   const filtersRef = useRef<HTMLDivElement>(null);
@@ -93,9 +96,10 @@ export default function FamilyTree({
             const data = getTreeData(personId);
             if (!data.person) return null;
 
+            const isCollapsed = collapsedNodeIds.has(personId);
             const shouldIncludeChildren =
               maxDepth === 0 || level < maxDepth - 1;
-            const children = shouldIncludeChildren
+            const children = (shouldIncludeChildren && !isCollapsed)
               ? data.children
                   .map((child: Person) =>
                     buildNode(child.id, new Set(visited), level + 1),
@@ -263,6 +267,19 @@ export default function FamilyTree({
 
     const hasChildren =
       maxDepth > 0 && level >= maxDepth - 1 ? false : data.children.length > 0;
+      
+    const isCollapsed = collapsedNodeIds.has(personId);
+    const handleToggleCollapse = () => {
+      setCollapsedNodeIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(personId)) {
+          next.delete(personId);
+        } else {
+          next.add(personId);
+        }
+        return next;
+      });
+    };
 
     return (
       <li>
@@ -295,11 +312,28 @@ export default function FamilyTree({
                 ))}
               </>
             )}
+
+            {/* Expand/Collapse Indicator */}
+            {hasChildren && (
+              <div 
+                className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white border border-stone-200/80 rounded-full size-6 flex items-center justify-center shadow-md z-10 flex-shrink-0 text-stone-500 hover:text-amber-600 transition-colors cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleCollapse();
+                }}
+              >
+                {!isCollapsed ? (
+                  <Minus className="w-3.5 h-3.5" />
+                ) : (
+                  <Plus className="w-3.5 h-3.5" />
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Render Children (if any) */}
-        {hasChildren && (
+        {hasChildren && !isCollapsed && (
           <ul>
             {data.children.map((child) => (
               <React.Fragment key={child.id}>
@@ -466,9 +500,10 @@ export default function FamilyTree({
                     const data = getTreeData(personId);
                     if (!data.person) return null;
 
+                    const isCollapsed = collapsedNodeIds.has(personId);
                     const shouldIncludeChildren =
                       maxDepth === 0 || level < maxDepth - 1;
-                    const children = shouldIncludeChildren
+                    const children = (shouldIncludeChildren && !isCollapsed)
                       ? data.children
                           .map((child: Person) =>
                             buildNode(child.id, new Set(visited), level + 1),

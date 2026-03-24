@@ -16,6 +16,7 @@ interface FamilyNodeCardProps {
   onClickSetRoot?: () => void; // New prop for setting as root
   isExpandable?: boolean;
   isExpanded?: boolean;
+  onToggleCollapse?: () => void;
   isRingVisible?: boolean;
   isPlusVisible?: boolean;
 }
@@ -27,6 +28,7 @@ export default function FamilyNodeCard({
   onClickSetRoot,
   isExpandable = false,
   isExpanded = false,
+  onToggleCollapse,
   isRingVisible = false,
   isPlusVisible = false,
 }: FamilyNodeCardProps) {
@@ -84,16 +86,7 @@ export default function FamilyNodeCard({
         className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300 z-0 ${person.gender === "male" ? "bg-sky-400" : person.gender === "female" ? "bg-rose-400" : "bg-stone-400"}`}
       /> */}
 
-      {/* Expand/Collapse Indicator */}
-      {isExpandable && (
-        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white border border-stone-200/80 rounded-full size-6 flex items-center justify-center shadow-md z-100 text-stone-500 hover:text-amber-600 transition-colors">
-          {isExpanded ? (
-            <Minus className="w-3.5 h-3.5" />
-          ) : (
-            <Plus className="w-3.5 h-3.5" />
-          )}
-        </div>
-      )}
+
 
       {/* 1. Avatar */}
       {showAvatar && (
